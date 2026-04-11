@@ -14,9 +14,12 @@ import {
   LinkIcon,
   PaperclipIcon,
   StarIcon,
-  WrenchIcon } from
+  WrenchIcon,
+  XIcon } from
 'lucide-react';
 import { storageGet, storageSet, KEYS } from '../utils/storage';
+import { ViewModal } from '../components/ViewModal';
+import type { SectionDef } from '../components/ViewModal';
 type Tab = 'form' | 'list';
 const FEEDBACK_TYPES = ['Suggestion', 'Compliment', 'Concern', 'Inquiry'];
 const DESIGNATION_OPTIONS = [
@@ -224,6 +227,7 @@ export function FeedbackFormPage() {
   const [activeTab, setActiveTab] = useState<Tab>('form');
   const [searchQuery, setSearchQuery] = useState('');
   const [records, setRecords] = useState<PffRecord[]>(loadPff);
+  const [viewRecord, setViewRecord] = useState<PffRecord | null>(null);
   const handleAdd = useCallback(
     (record: Omit<PffRecord, 'id' | 'refNo'>) => {
       const nextId =
@@ -816,11 +820,172 @@ function PffList({
 
 }: {records: PffRecord[];searchQuery: string;onSearch: (q: string) => void;onDelete: (id: number) => void;}) {
   const [page, setPage] = useState(1);
+  const [viewRecord, setViewRecord] = useState<PffRecord | null>(null);
   const perPage = 5;
   const totalPages = Math.max(1, Math.ceil(records.length / perPage));
   const paginated = records.slice((page - 1) * perPage, page * perPage);
+  function getViewSections(r: PffRecord): SectionDef[] {
+    const ratingLabel = r.rating ?
+    {
+      '1': 'Very Poor',
+      '2': 'Poor',
+      '3': 'Average',
+      '4': 'Good',
+      '5': 'Excellent'
+    }[r.rating] || r.rating :
+    '';
+    return [
+    {
+      title: 'Basic Information',
+      fields: [
+      {
+        label: 'PFF Reference No.',
+        value: r.refNo
+      },
+      {
+        label: 'Date of Feedback',
+        value: r.dateFeedback
+      },
+      {
+        label: 'Province',
+        value: r.province
+      },
+      {
+        label: 'Municipality / City',
+        value: r.municipality
+      },
+      {
+        label: 'Barangay',
+        value: r.barangay
+      }]
+
+    },
+    {
+      title: 'Respondent Information',
+      fields: [
+      {
+        label: 'Anonymous',
+        value: r.isAnonymous,
+        type: 'badge' as const,
+        badgeColor:
+        r.isAnonymous === 'Yes' ?
+        'bg-amber-50 text-amber-700' :
+        'bg-green-50 text-green-700'
+      },
+      ...(r.isAnonymous === 'No' ?
+      [
+      {
+        label: 'Name',
+        value: r.respondentName
+      },
+      {
+        label: 'Contact Number',
+        value: r.contactNumber
+      }] :
+
+      []),
+      {
+        label: 'Designation / Role',
+        value: r.designation
+      }]
+
+    },
+    {
+      title: 'Feedback Details',
+      fields: [
+      {
+        label: 'Feedback Type',
+        value: r.feedbackType,
+        type: 'badge' as const,
+        badgeColor:
+        r.feedbackType === 'Compliment' ?
+        'bg-green-50 text-green-700' :
+        r.feedbackType === 'Concern' ?
+        'bg-amber-50 text-amber-700' :
+        r.feedbackType === 'Inquiry' ?
+        'bg-purple-50 text-purple-700' :
+        'bg-blue-50 text-blue-700'
+      },
+      {
+        label: 'Subject',
+        value: r.subject
+      },
+      {
+        label: 'Description',
+        value: r.description
+      },
+      {
+        label: 'Rating',
+        value: r.rating ? `${r.rating}/5 - ${ratingLabel}` : '',
+        type: 'badge' as const,
+        badgeColor:
+        Number(r.rating) >= 4 ?
+        'bg-green-50 text-green-700' :
+        Number(r.rating) >= 3 ?
+        'bg-amber-50 text-amber-700' :
+        'bg-red-50 text-red-700'
+      }]
+
+    },
+    {
+      title: 'Response & Action',
+      fields: [
+      {
+        label: 'Status',
+        value: r.status,
+        type: 'badge' as const,
+        badgeColor:
+        r.status === 'Addressed' ?
+        'bg-green-50 text-green-700' :
+        r.status === 'Closed' ?
+        'bg-gray-100 text-gray-600' :
+        r.status === 'Under Review' ?
+        'bg-amber-50 text-amber-700' :
+        'bg-blue-50 text-blue-700'
+      },
+      {
+        label: 'Response Details',
+        value: r.responseDetails
+      },
+      {
+        label: 'Date Addressed',
+        value: r.dateAddressed
+      },
+      {
+        label: 'Responsible Person',
+        value: r.responsiblePerson
+      }]
+
+    },
+    {
+      title: 'Attachments',
+      fields: [
+      {
+        label: 'Document Link',
+        value: r.documentLink,
+        type: 'link' as const
+      },
+      {
+        label: 'Remarks',
+        value: r.remarks
+      }]
+
+    }];
+
+  }
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+      <ViewModal
+        isOpen={!!viewRecord}
+        onClose={() => setViewRecord(null)}
+        title={viewRecord ? `Feedback ${viewRecord.refNo}` : 'Feedback Details'}
+        subtitle={
+        viewRecord ?
+        `${viewRecord.feedbackType} • ${viewRecord.dateFeedback}` :
+        ''
+        }
+        sections={viewRecord ? getViewSections(viewRecord) : []} />
+      
       <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <SearchIcon
@@ -888,6 +1053,7 @@ function PffList({
                 <td className="px-4 py-3.5">
                   <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
                     <button
+                    onClick={() => setViewRecord(r)}
                     className="p-1.5 rounded-lg hover:bg-secondary-100 text-secondary transition-all hover:scale-110"
                     title="View">
                     
@@ -940,7 +1106,10 @@ function PffList({
             </div>
             <div className="flex items-center justify-end pt-1">
               <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
-                <button className="p-1.5 rounded-lg hover:bg-secondary-50 text-secondary transition-colors">
+                <button
+                onClick={() => setViewRecord(r)}
+                className="p-1.5 rounded-lg hover:bg-secondary-50 text-secondary transition-colors">
+                
                   <EyeIcon size={14} />
                 </button>
                 <button

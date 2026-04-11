@@ -50,15 +50,20 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         <div className="p-5 border-b border-gray-100">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <SunIcon size={18} className="text-white" />
-              </div>
+              <img
+                src="/pasted-image.png"
+                alt="DOH Logo"
+                className="w-9 h-9 rounded-xl object-contain" />
+              
               <div>
-                <h2 className="text-sm font-bold text-gray-900 leading-tight">
-                  Alagang Pinas
+                <h2 className="text-[11px] font-bold text-gray-900 leading-tight">
+                  Philippine Multisectoral
+                </h2>
+                <h2 className="text-[11px] font-bold text-gray-900 leading-tight">
+                  Nutrition Project
                 </h2>
                 <p className="text-[10px] text-gray-400 font-medium">
-                  PMNP Portal
+                  Dashboard
                 </p>
               </div>
             </div>

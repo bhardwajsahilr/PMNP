@@ -19,9 +19,12 @@ import {
   DollarSignIcon,
   HeartPulseIcon,
   ActivityIcon,
-  BarChart3Icon } from
+  BarChart3Icon,
+  XIcon } from
 'lucide-react';
 import { storageGet, storageSet, KEYS } from '../utils/storage';
+import { ViewModal } from '../components/ViewModal';
+import type { SectionDef } from '../components/ViewModal';
 type Tab = 'form' | 'list';
 interface LncRecord {
   id: number;
@@ -690,8 +693,208 @@ function LncList({
 
 
 }: {records: LncRecord[];searchQuery: string;onSearch: (q: string) => void;onDelete: (id: number) => void;}) {
+  const [viewRecord, setViewRecord] = useState<LncRecord | null>(null);
+  function getViewSections(r: LncRecord): SectionDef[] {
+    return [
+    {
+      title: 'Report Information',
+      fields: [
+      {
+        label: 'Report Date',
+        value: r.reportDate
+      },
+      {
+        label: 'Total Score',
+        value: `${r.totalScore}/10`,
+        type: 'badge' as const,
+        badgeColor:
+        r.totalScore >= 8 ?
+        'bg-green-50 text-green-700' :
+        r.totalScore >= 5 ?
+        'bg-blue-50 text-blue-700' :
+        r.totalScore >= 3 ?
+        'bg-amber-50 text-amber-700' :
+        'bg-red-50 text-red-700'
+      },
+      {
+        label: 'Functionality Status',
+        value: r.functionalityStatus,
+        type: 'badge' as const,
+        badgeColor:
+        r.functionalityStatus === 'Fully Functional' ?
+        'bg-green-50 text-green-700' :
+        r.functionalityStatus === 'Substantially Functional' ?
+        'bg-blue-50 text-blue-700' :
+        r.functionalityStatus === 'Partially Functional' ?
+        'bg-amber-50 text-amber-700' :
+        'bg-red-50 text-red-600'
+      },
+      {
+        label: 'Remarks',
+        value: r.remarks
+      }]
+
+    },
+    {
+      title: 'Criteria Assessment',
+      fields: [
+      {
+        label: '(1) BNS completed training',
+        value: r.bnsTraining === '1' ? 'Yes' : 'No',
+        type: 'badge' as const,
+        badgeColor:
+        r.bnsTraining === '1' ?
+        'bg-green-50 text-green-700' :
+        'bg-red-50 text-red-600'
+      },
+      {
+        label: 'BNS Training Link',
+        value: r.bnsTrainingLink,
+        type: 'link' as const
+      },
+      {
+        label: '(2) LNC meetings held quarterly',
+        value: r.lncMeetings === '1' ? 'Yes' : 'No',
+        type: 'badge' as const,
+        badgeColor:
+        r.lncMeetings === '1' ?
+        'bg-green-50 text-green-700' :
+        'bg-red-50 text-red-600'
+      },
+      {
+        label: 'Meetings Link',
+        value: r.meetingsLink,
+        type: 'link' as const
+      },
+      {
+        label: '(3) Minutes documented',
+        value: r.minutesDocumented === '1' ? 'Yes' : 'No',
+        type: 'badge' as const,
+        badgeColor:
+        r.minutesDocumented === '1' ?
+        'bg-green-50 text-green-700' :
+        'bg-red-50 text-red-600'
+      },
+      {
+        label: 'Minutes Link',
+        value: r.minutesLink,
+        type: 'link' as const
+      },
+      {
+        label: '(4) OPT Plus updated',
+        value: r.optPlus === '1' ? 'Yes' : 'No',
+        type: 'badge' as const,
+        badgeColor:
+        r.optPlus === '1' ?
+        'bg-green-50 text-green-700' :
+        'bg-red-50 text-red-600'
+      },
+      {
+        label: 'OPT Plus Link',
+        value: r.optPlusLink,
+        type: 'link' as const
+      },
+      {
+        label: '(5) Nutrition report prepared',
+        value: r.nutritionReport === '1' ? 'Yes' : 'No',
+        type: 'badge' as const,
+        badgeColor:
+        r.nutritionReport === '1' ?
+        'bg-green-50 text-green-700' :
+        'bg-red-50 text-red-600'
+      },
+      {
+        label: 'Report Link',
+        value: r.reportLink,
+        type: 'link' as const
+      },
+      {
+        label: '(6) NAP in LDP with budget',
+        value: r.napLdp === '1' ? 'Yes' : 'No',
+        type: 'badge' as const,
+        badgeColor:
+        r.napLdp === '1' ?
+        'bg-green-50 text-green-700' :
+        'bg-red-50 text-red-600'
+      },
+      {
+        label: 'NAP LDP Link',
+        value: r.napLdpLink,
+        type: 'link' as const
+      },
+      {
+        label: '(7) NAP in AIP',
+        value: r.napAip === '1' ? 'Yes' : 'No',
+        type: 'badge' as const,
+        badgeColor:
+        r.napAip === '1' ?
+        'bg-green-50 text-green-700' :
+        'bg-red-50 text-red-600'
+      },
+      {
+        label: 'AIP Link',
+        value: r.aipLink,
+        type: 'link' as const
+      },
+      {
+        label: '(8) Funds allocated & expended',
+        value: r.fundsAllocated === '1' ? 'Yes' : 'No',
+        type: 'badge' as const,
+        badgeColor:
+        r.fundsAllocated === '1' ?
+        'bg-green-50 text-green-700' :
+        'bg-red-50 text-red-600'
+      },
+      {
+        label: 'Funds Link',
+        value: r.fundsLink,
+        type: 'link' as const
+      },
+      {
+        label: '(9) Target groups received interventions',
+        value: r.targetGroups === '1' ? 'Yes' : 'No',
+        type: 'badge' as const,
+        badgeColor:
+        r.targetGroups === '1' ?
+        'bg-green-50 text-green-700' :
+        'bg-red-50 text-red-600'
+      },
+      {
+        label: 'Target Group Link',
+        value: r.targetGroupLink,
+        type: 'link' as const
+      },
+      {
+        label: '(10) Monitoring visits conducted',
+        value: r.monitoringVisits === '1' ? 'Yes' : 'No',
+        type: 'badge' as const,
+        badgeColor:
+        r.monitoringVisits === '1' ?
+        'bg-green-50 text-green-700' :
+        'bg-red-50 text-red-600'
+      },
+      {
+        label: 'Monitoring Link',
+        value: r.monitoringLink,
+        type: 'link' as const
+      }]
+
+    }];
+
+  }
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+      <ViewModal
+        isOpen={!!viewRecord}
+        onClose={() => setViewRecord(null)}
+        title="LNC Status Record"
+        subtitle={
+        viewRecord ?
+        `Report Date: ${viewRecord.reportDate} • Score: ${viewRecord.totalScore}/10` :
+        ''
+        }
+        sections={viewRecord ? getViewSections(viewRecord) : []} />
+      
       <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <SearchIcon
@@ -758,6 +961,7 @@ function LncList({
                 <td className="px-4 py-3.5">
                   <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
                     <button
+                    onClick={() => setViewRecord(r)}
                     className="p-1.5 rounded-lg hover:bg-secondary-100 text-secondary transition-all hover:scale-110"
                     title="View">
                     
@@ -803,7 +1007,10 @@ function LncList({
             </div>
             {r.remarks && <p className="text-xs text-gray-500">{r.remarks}</p>}
             <div className="flex justify-end gap-1 pt-1 border-t border-gray-50">
-              <button className="p-1.5 rounded-lg hover:bg-secondary-50 text-secondary transition-colors">
+              <button
+              onClick={() => setViewRecord(r)}
+              className="p-1.5 rounded-lg hover:bg-secondary-50 text-secondary transition-colors">
+              
                 <EyeIcon size={14} />
               </button>
               <button className="p-1.5 rounded-lg hover:bg-primary-50 text-primary transition-colors">

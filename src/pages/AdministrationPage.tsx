@@ -13,9 +13,12 @@ import {
   UsersIcon,
   PaperclipIcon,
   CheckCircleIcon,
-  LinkIcon } from
+  LinkIcon,
+  XIcon } from
 'lucide-react';
 import { storageGet, storageSet, KEYS } from '../utils/storage';
+import { ViewModal } from '../components/ViewModal';
+import type { SectionDef } from '../components/ViewModal';
 type Tab = 'form' | 'list';
 interface Meeting {
   id: number;
@@ -527,8 +530,71 @@ function MeetingList({
 
 
 }: {meetings: Meeting[];searchQuery: string;onSearch: (q: string) => void;onDelete: (id: number) => void;}) {
+  const [viewRecord, setViewRecord] = useState<Meeting | null>(null);
+  function getViewSections(m: Meeting): SectionDef[] {
+    return [
+    {
+      title: 'Meeting Details',
+      fields: [
+      {
+        label: 'Date',
+        value: m.date
+      },
+      {
+        label: 'Office Code',
+        value: m.officeCode
+      },
+      {
+        label: 'Time',
+        value: m.time
+      },
+      {
+        label: 'Activity',
+        value: m.activity
+      },
+      {
+        label: 'Venue',
+        value: m.venue
+      }]
+
+    },
+    {
+      title: 'Participants',
+      fields: [
+      {
+        label: 'Designation',
+        value: m.designation
+      },
+      {
+        label: 'Region',
+        value: m.region,
+        type: 'badge' as const,
+        badgeColor: 'bg-secondary-50 text-secondary'
+      }]
+
+    },
+    {
+      title: 'Remarks',
+      fields: [
+      {
+        label: 'Remark',
+        value: m.remark
+      }]
+
+    }];
+
+  }
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+      <ViewModal
+        isOpen={!!viewRecord}
+        onClose={() => setViewRecord(null)}
+        title={viewRecord?.activity || 'Meeting Details'}
+        subtitle={
+        viewRecord ? `${viewRecord.officeCode} • ${viewRecord.date}` : ''
+        }
+        sections={viewRecord ? getViewSections(viewRecord) : []} />
+      
       {/* Search & Filters */}
       <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
@@ -606,6 +672,7 @@ function MeetingList({
                 <td className="px-4 py-3.5">
                   <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
                     <button
+                    onClick={() => setViewRecord(m)}
                     className="p-1.5 rounded-lg hover:bg-secondary-100 text-secondary transition-all hover:scale-110"
                     title="View">
                     
@@ -656,7 +723,10 @@ function MeetingList({
                 {m.region}
               </span>
               <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
-                <button className="p-1.5 rounded-lg hover:bg-secondary-50 text-secondary transition-colors">
+                <button
+                onClick={() => setViewRecord(m)}
+                className="p-1.5 rounded-lg hover:bg-secondary-50 text-secondary transition-colors">
+                
                   <EyeIcon size={14} />
                 </button>
                 <button className="p-1.5 rounded-lg hover:bg-primary-50 text-primary transition-colors">

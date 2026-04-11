@@ -15,9 +15,12 @@ import {
   CheckCircleIcon,
   LinkIcon,
   PaperclipIcon,
-  AlertTriangleIcon } from
+  AlertTriangleIcon,
+  XIcon } from
 'lucide-react';
 import { storageGet, storageSet, KEYS } from '../utils/storage';
+import { ViewModal } from '../components/ViewModal';
+import type { SectionDef } from '../components/ViewModal';
 type Tab = 'form' | 'list';
 const NATURE_OPTIONS = [
 'Type A - Environmental',
@@ -224,6 +227,7 @@ export function GrievanceIntakePage() {
   const [activeTab, setActiveTab] = useState<Tab>('form');
   const [searchQuery, setSearchQuery] = useState('');
   const [records, setRecords] = useState<GifRecord[]>(loadGif);
+  const [viewRecord, setViewRecord] = useState<GifRecord | null>(null);
   const handleAdd = useCallback(
     (record: Omit<GifRecord, 'id' | 'refNo'>) => {
       const nextId =
@@ -909,11 +913,185 @@ function GifList({
 
 }: {records: GifRecord[];searchQuery: string;onSearch: (q: string) => void;onDelete: (id: number) => void;}) {
   const [page, setPage] = useState(1);
+  const [viewRecord, setViewRecord] = useState<GifRecord | null>(null);
   const perPage = 5;
   const totalPages = Math.max(1, Math.ceil(records.length / perPage));
   const paginated = records.slice((page - 1) * perPage, page * perPage);
+  function getViewSections(r: GifRecord): SectionDef[] {
+    const sections: SectionDef[] = [
+    {
+      title: 'Basic Information',
+      fields: [
+      {
+        label: 'GIF Reference No.',
+        value: r.refNo
+      },
+      {
+        label: 'Date Received',
+        value: r.dateReceived
+      },
+      {
+        label: 'Province',
+        value: r.province
+      },
+      {
+        label: 'Municipality / City',
+        value: r.municipality
+      },
+      {
+        label: 'Barangay',
+        value: r.barangay
+      }]
+
+    },
+    {
+      title: 'Complainant Information',
+      fields: [
+      {
+        label: 'Anonymous',
+        value: r.isAnonymous,
+        type: 'badge' as const,
+        badgeColor:
+        r.isAnonymous === 'Yes' ?
+        'bg-amber-50 text-amber-700' :
+        'bg-green-50 text-green-700'
+      },
+      ...(r.isAnonymous === 'No' ?
+      [
+      {
+        label: 'Name of Complainant',
+        value: r.complainantName
+      },
+      {
+        label: 'Contact Number',
+        value: r.contactNumber
+      },
+      {
+        label: 'Address',
+        value: r.address
+      }] :
+
+      [])]
+
+    },
+    {
+      title: 'Complaint Details',
+      fields: [
+      {
+        label: 'Nature of Concern',
+        value: r.natureOfConcern
+      },
+      ...(r.othersSpecify ?
+      [
+      {
+        label: 'Others (Specify)',
+        value: r.othersSpecify
+      }] :
+
+      []),
+      {
+        label: 'Description',
+        value: r.description
+      }]
+
+    },
+    {
+      title: 'Category & Classification',
+      fields: [
+      {
+        label: 'Category',
+        value: r.category
+      },
+      {
+        label: 'Severity',
+        value: r.severity,
+        type: 'badge' as const,
+        badgeColor:
+        r.severity === 'Critical' ?
+        'bg-red-50 text-red-700' :
+        r.severity === 'High' ?
+        'bg-orange-50 text-orange-700' :
+        r.severity === 'Medium' ?
+        'bg-amber-50 text-amber-700' :
+        'bg-green-50 text-green-700'
+      }]
+
+    },
+    {
+      title: 'Action Taken',
+      fields: [
+      {
+        label: 'Action Taken',
+        value: r.actionTaken
+      },
+      {
+        label: 'Date of Action',
+        value: r.dateOfAction
+      },
+      {
+        label: 'Responsible Person',
+        value: r.responsiblePerson
+      }]
+
+    },
+    {
+      title: 'Resolution',
+      fields: [
+      {
+        label: 'Status',
+        value: r.status,
+        type: 'badge' as const,
+        badgeColor:
+        r.status === 'Resolved' ?
+        'bg-green-50 text-green-700' :
+        r.status === 'Closed' ?
+        'bg-gray-100 text-gray-600' :
+        r.status === 'Under Investigation' ?
+        'bg-amber-50 text-amber-700' :
+        'bg-blue-50 text-blue-700'
+      },
+      {
+        label: 'Resolution Details',
+        value: r.resolutionDetails
+      },
+      {
+        label: 'Date Resolved',
+        value: r.dateResolved
+      }]
+
+    },
+    {
+      title: 'Supporting Documents',
+      fields: [
+      {
+        label: 'Document Link',
+        value: r.documentLink,
+        type: 'link' as const
+      },
+      {
+        label: 'Remarks',
+        value: r.remarks
+      }]
+
+    }];
+
+    return sections;
+  }
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+      <ViewModal
+        isOpen={!!viewRecord}
+        onClose={() => setViewRecord(null)}
+        title={
+        viewRecord ? `Grievance ${viewRecord.refNo}` : 'Grievance Details'
+        }
+        subtitle={
+        viewRecord ?
+        `${viewRecord.natureOfConcern} • ${viewRecord.dateReceived}` :
+        ''
+        }
+        sections={viewRecord ? getViewSections(viewRecord) : []} />
+      
       <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <SearchIcon
@@ -981,6 +1159,7 @@ function GifList({
                 <td className="px-4 py-3.5">
                   <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
                     <button
+                    onClick={() => setViewRecord(r)}
                     className="p-1.5 rounded-lg hover:bg-secondary-100 text-secondary transition-all hover:scale-110"
                     title="View">
                     
@@ -1032,7 +1211,10 @@ function GifList({
             </div>
             <div className="flex items-center justify-end pt-1">
               <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
-                <button className="p-1.5 rounded-lg hover:bg-secondary-50 text-secondary transition-colors">
+                <button
+                onClick={() => setViewRecord(r)}
+                className="p-1.5 rounded-lg hover:bg-secondary-50 text-secondary transition-colors">
+                
                   <EyeIcon size={14} />
                 </button>
                 <button

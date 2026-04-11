@@ -16,9 +16,12 @@ import {
   BuildingIcon,
   UsersIcon,
   CalculatorIcon,
-  CheckCircleIcon } from
+  CheckCircleIcon,
+  XIcon } from
 'lucide-react';
 import { storageGet, storageSet, KEYS } from '../utils/storage';
+import { ViewModal } from '../components/ViewModal';
+import type { SectionDef } from '../components/ViewModal';
 type Tab = 'form' | 'list';
 interface LnapRecord {
   id: number;
@@ -174,6 +177,7 @@ export function LnapPage() {
   const [activeTab, setActiveTab] = useState<Tab>('form');
   const [searchQuery, setSearchQuery] = useState('');
   const [records, setRecords] = useState<LnapRecord[]>(loadLnap);
+  const [viewRecord, setViewRecord] = useState<LnapRecord | null>(null);
   const handleAdd = useCallback(
     (record: Omit<LnapRecord, 'id'>) => {
       const nextId =
@@ -678,8 +682,147 @@ function LnapList({
 
 
 }: {records: LnapRecord[];searchQuery: string;onSearch: (q: string) => void;onDelete: (id: number) => void;}) {
+  const [viewRecord, setViewRecord] = useState<LnapRecord | null>(null);
+  function getViewSections(r: LnapRecord): SectionDef[] {
+    return [
+    {
+      title: 'Basic Information',
+      fields: [
+      {
+        label: 'Report Date',
+        value: r.reportDate
+      },
+      {
+        label: '2025-2026 BNAP Status',
+        value: r.bnapStatus,
+        type: 'badge' as const,
+        badgeColor:
+        r.bnapStatus === 'Approved BNAP' ?
+        'bg-green-50 text-green-700' :
+        r.bnapStatus === 'Under Development' ?
+        'bg-amber-50 text-amber-700' :
+        'bg-red-50 text-red-600'
+      },
+      {
+        label: 'BNAP Documents',
+        value: r.bnapDocuments
+      },
+      {
+        label: 'Link to Scanned BNAP Status Document',
+        value: r.bnapLink,
+        type: 'link' as const
+      }]
+
+    },
+    {
+      title: '6-Point Criteria',
+      fields: [
+      {
+        label: 'Follows the 6-Point Criteria?',
+        value: r.sixPoint,
+        type: 'badge' as const,
+        badgeColor:
+        r.sixPoint === 'Yes' ?
+        'bg-green-50 text-green-700' :
+        r.sixPoint === 'No' ?
+        'bg-red-50 text-red-600' :
+        'bg-amber-50 text-amber-700'
+      },
+      {
+        label: 'Link to Scanned Document with 6-Point Criteria',
+        value: r.sixPointLink,
+        type: 'link' as const
+      }]
+
+    },
+    {
+      title: 'SB Resolution on BNAP Approval',
+      fields: [
+      {
+        label: 'SB Resolution on BNAP Approval',
+        value: r.sbResolution,
+        type: 'badge' as const,
+        badgeColor:
+        r.sbResolution === 'Yes' ?
+        'bg-green-50 text-green-700' :
+        r.sbResolution === 'No' ?
+        'bg-red-50 text-red-600' :
+        'bg-amber-50 text-amber-700'
+      },
+      {
+        label: 'Link to Scanned Approved BNAP with Resolution',
+        value: r.resolutionLink,
+        type: 'link' as const
+      }]
+
+    },
+    {
+      title: 'AIP Inclusion',
+      fields: [
+      {
+        label: 'Inclusion of BNAP PPAs in AIP',
+        value: r.aipInclusion,
+        type: 'badge' as const,
+        badgeColor:
+        r.aipInclusion === 'Yes' ?
+        'bg-green-50 text-green-700' :
+        r.aipInclusion === 'No' ?
+        'bg-red-50 text-red-600' :
+        'bg-amber-50 text-amber-700'
+      },
+      {
+        label: 'Link to Scanned Approved AIP',
+        value: r.aipLink,
+        type: 'link' as const
+      }]
+
+    },
+    {
+      title: 'BNC Reorganization',
+      fields: [
+      {
+        label: 'Resolution/Ordinance on BNC Reorganization',
+        value: r.bncResolution,
+        type: 'badge' as const,
+        badgeColor:
+        r.bncResolution === 'Yes' ?
+        'bg-green-50 text-green-700' :
+        r.bncResolution === 'No' ?
+        'bg-red-50 text-red-600' :
+        'bg-amber-50 text-amber-700'
+      },
+      {
+        label: 'Link to Scanned BNC Org Reso/EO',
+        value: r.bncLink,
+        type: 'link' as const
+      }]
+
+    },
+    {
+      title: '6+3 Criteria',
+      fields: [
+      {
+        label: '6+3 Criteria Score',
+        value: r.sixThreeScore
+      },
+      {
+        label: 'Link to Scanned Document with 6+3 Criteria',
+        value: r.sixThreeLink,
+        type: 'link' as const
+      }]
+
+    }];
+
+  }
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+      <ViewModal
+        isOpen={!!viewRecord}
+        onClose={() => setViewRecord(null)}
+        title="LNAP Status Record"
+        subtitle={viewRecord ? `Report Date: ${viewRecord.reportDate}` : ''}
+        sections={viewRecord ? getViewSections(viewRecord) : []} />
+      
       <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <SearchIcon
@@ -751,6 +894,7 @@ function LnapList({
                 <td className="px-4 py-3.5">
                   <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
                     <button
+                    onClick={() => setViewRecord(r)}
                     className="p-1.5 rounded-lg hover:bg-secondary-100 text-secondary transition-all hover:scale-110"
                     title="View">
                     
@@ -805,7 +949,10 @@ function LnapList({
               </div>
             </div>
             <div className="flex justify-end gap-1 pt-1 border-t border-gray-50">
-              <button className="p-1.5 rounded-lg hover:bg-secondary-50 text-secondary transition-colors">
+              <button
+              onClick={() => setViewRecord(r)}
+              className="p-1.5 rounded-lg hover:bg-secondary-50 text-secondary transition-colors">
+              
                 <EyeIcon size={14} />
               </button>
               <button className="p-1.5 rounded-lg hover:bg-primary-50 text-primary transition-colors">

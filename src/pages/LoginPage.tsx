@@ -85,15 +85,10 @@ export function LoginPage() {
             nutrition programs across the Philippines.
           </p>
 
-          <div className="flex gap-4 mt-8 justify-center lg:justify-start">
-            <div className="flex items-center gap-2 text-white/80 text-xs">
-              <HeartIcon size={14} />
-              <span>Community Care</span>
-            </div>
-            <div className="flex items-center gap-2 text-white/80 text-xs">
-              <UsersIcon size={14} />
-              <span>Nutrition Support</span>
-            </div>
+          <div className="mt-8 text-center">
+            <p className="text-white/90 text-lg font-semibold tracking-wide">
+              Harmonized Information System
+            </p>
           </div>
         </div>
       </motion.div>
@@ -115,6 +110,20 @@ export function LoginPage() {
         className="lg:w-1/2 w-full min-h-[60vh] lg:min-h-screen bg-white flex items-center justify-center p-8">
         
         <div className="w-full max-w-md">
+          {/* Government Logos */}
+          <div className="flex items-center justify-center gap-5 mb-6">
+            <img
+              src="/pasted-image.png"
+              alt="Department of Health - Republic of the Philippines"
+              className="w-16 h-16 object-contain" />
+            
+            <img
+              src="/pasted-image-1.png"
+              alt="Bagong Pilipinas"
+              className="w-16 h-16 object-contain" />
+            
+          </div>
+
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
