@@ -5,7 +5,6 @@ import {
   ClipboardListIcon,
   FileTextIcon,
   LogOutIcon,
-  SunIcon,
   XIcon,
   ChevronDownIcon,
   ChevronRightIcon,
@@ -13,10 +12,352 @@ import {
   UsersIcon,
   ShieldCheckIcon,
   AlertTriangleIcon,
-  MessageSquareIcon } from
+  MessageSquareIcon,
+  GraduationCapIcon,
+  DollarSignIcon,
+  BarChart3Icon,
+  AwardIcon,
+  ShoppingCartIcon,
+  MegaphoneIcon,
+  FileIcon,
+  FolderIcon,
+  TargetIcon,
+  MapPinIcon,
+  ClipboardIcon,
+  WrenchIcon,
+  TruckIcon,
+  PackageIcon,
+  MonitorIcon,
+  HeartPulseIcon,
+  BoxIcon,
+  CheckSquareIcon,
+  FileSearchIcon,
+  FileCheckIcon,
+  ListChecksIcon,
+  BookOpenIcon,
+  UserPlusIcon,
+  LayoutListIcon,
+  BriefcaseIcon,
+  CoinsIcon,
+  ReceiptIcon,
+  ActivityIcon,
+  LineChartIcon,
+  PieChartIcon,
+  SpeakerIcon } from
 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { motion, AnimatePresence } from 'framer-motion';
+interface SubItem {
+  label: string;
+  path: string;
+  icon: React.ElementType;
+}
+interface ExpandableModule {
+  key: string;
+  label: string;
+  icon: React.ElementType;
+  basePath: string;
+  subItems: SubItem[];
+}
+const EXPANDABLE_MODULES: ExpandableModule[] = [
+{
+  key: 'administration',
+  label: 'Administration',
+  icon: ClipboardListIcon,
+  basePath: '/dashboard/administration',
+  subItems: [
+  {
+    label: 'PMNP Meetings',
+    path: '/dashboard/administration/pmnp-meetings',
+    icon: UsersIcon
+  },
+  {
+    label: 'Doc Repo',
+    path: '/dashboard/administration/doc-repo',
+    icon: FolderIcon
+  }]
+
+},
+{
+  key: 'capacity-building',
+  label: 'Capacity Building',
+  icon: GraduationCapIcon,
+  basePath: '/dashboard/capacity-building',
+  subItems: [
+  {
+    label: 'Training Registration',
+    path: '/dashboard/capacity-building/training-registration',
+    icon: BookOpenIcon
+  },
+  {
+    label: 'Participant Registration',
+    path: '/dashboard/capacity-building/participant-registration',
+    icon: UserPlusIcon
+  },
+  {
+    label: 'NPHC Targets',
+    path: '/dashboard/capacity-building/nphc-targets',
+    icon: TargetIcon
+  },
+  {
+    label: 'Capacity Mapping',
+    path: '/dashboard/capacity-building/capacity-mapping',
+    icon: MapPinIcon
+  },
+  {
+    label: 'Doc Repo',
+    path: '/dashboard/capacity-building/doc-repo',
+    icon: FolderIcon
+  }]
+
+},
+{
+  key: 'esmf',
+  label: 'ESMF',
+  icon: ShieldCheckIcon,
+  basePath: '/dashboard/esmf',
+  subItems: [
+  {
+    label: 'Grievance Intake',
+    path: '/dashboard/esmf/grievance',
+    icon: AlertTriangleIcon
+  },
+  {
+    label: 'Feedback Form',
+    path: '/dashboard/esmf/feedback',
+    icon: MessageSquareIcon
+  }]
+
+},
+{
+  key: 'finance',
+  label: 'Finance',
+  icon: DollarSignIcon,
+  basePath: '/dashboard/finance',
+  subItems: [
+  {
+    label: 'LGU - WFP',
+    path: '/dashboard/finance/lgu-wfp',
+    icon: CoinsIcon
+  },
+  {
+    label: 'LGU - FUR',
+    path: '/dashboard/finance/lgu-fur',
+    icon: ReceiptIcon
+  },
+  {
+    label: 'RPMO WFP',
+    path: '/dashboard/finance/rpmo-wfp',
+    icon: CoinsIcon
+  },
+  {
+    label: 'RPMO FUR',
+    path: '/dashboard/finance/rpmo-fur',
+    icon: ReceiptIcon
+  },
+  {
+    label: 'NPMO WFP',
+    path: '/dashboard/finance/npmo-wfp',
+    icon: CoinsIcon
+  },
+  {
+    label: 'NPMO FUR',
+    path: '/dashboard/finance/npmo-fur',
+    icon: ReceiptIcon
+  },
+  {
+    label: 'SORD',
+    path: '/dashboard/finance/sord',
+    icon: FileTextIcon
+  },
+  {
+    label: 'CSF',
+    path: '/dashboard/finance/csf',
+    icon: FileTextIcon
+  },
+  {
+    label: 'Doc Repo',
+    path: '/dashboard/finance/doc-repo',
+    icon: FolderIcon
+  }]
+
+},
+{
+  key: 'lnap',
+  label: 'LNAP',
+  icon: FileTextIcon,
+  basePath: '/dashboard/lnap',
+  subItems: [
+  {
+    label: 'LNAP Status',
+    path: '/dashboard/lnap/status',
+    icon: ClipboardCheckIcon
+  },
+  {
+    label: 'LNC Status',
+    path: '/dashboard/lnap/lnc-status',
+    icon: UsersIcon
+  }]
+
+},
+{
+  key: 'me',
+  label: 'M&E',
+  icon: BarChart3Icon,
+  basePath: '/dashboard/me',
+  subItems: [
+  {
+    label: 'Municipality / Barangay Profile',
+    path: '/dashboard/me/municipality-profile',
+    icon: MapPinIcon
+  },
+  {
+    label: 'HF Checklist',
+    path: '/dashboard/me/hf-checklist',
+    icon: CheckSquareIcon
+  },
+  {
+    label: 'Result Framework - Targets',
+    path: '/dashboard/me/rf-targets',
+    icon: TargetIcon
+  },
+  {
+    label: 'Result Framework - Baseline',
+    path: '/dashboard/me/rf-baseline',
+    icon: LineChartIcon
+  },
+  {
+    label: 'Result Framework - FHSIS',
+    path: '/dashboard/me/rf-fhsis',
+    icon: ActivityIcon
+  },
+  {
+    label: 'Doc Repo',
+    path: '/dashboard/me/doc-repo',
+    icon: FolderIcon
+  }]
+
+},
+{
+  key: 'pbg',
+  label: 'PBG',
+  icon: AwardIcon,
+  basePath: '/dashboard/pbg',
+  subItems: [
+  {
+    label: 'Internal Verification Summary',
+    path: '/dashboard/pbg/internal-verification-summary',
+    icon: FileSearchIcon
+  },
+  {
+    label: 'External Verification Summary',
+    path: '/dashboard/pbg/external-verification-summary',
+    icon: FileSearchIcon
+  },
+  {
+    label: 'Internal Verification Tool',
+    path: '/dashboard/pbg/internal-verification-tool',
+    icon: WrenchIcon
+  },
+  {
+    label: 'External Verification Tool',
+    path: '/dashboard/pbg/external-verification-tool',
+    icon: WrenchIcon
+  },
+  {
+    label: 'Internal Verification Checklist',
+    path: '/dashboard/pbg/internal-verification-checklist',
+    icon: ListChecksIcon
+  },
+  {
+    label: 'External Verification Checklist',
+    path: '/dashboard/pbg/external-verification-checklist',
+    icon: ListChecksIcon
+  },
+  {
+    label: 'External Verification Report',
+    path: '/dashboard/pbg/external-verification-report',
+    icon: FileCheckIcon
+  },
+  {
+    label: 'Doc Repo',
+    path: '/dashboard/pbg/doc-repo',
+    icon: FolderIcon
+  }]
+
+},
+{
+  key: 'procurement',
+  label: 'Procurement',
+  icon: ShoppingCartIcon,
+  basePath: '/dashboard/procurement',
+  subItems: [
+  {
+    label: 'Anthropometry Supplies & Equipment',
+    path: '/dashboard/procurement/anthropometry',
+    icon: PackageIcon
+  },
+  {
+    label: 'Equipment Supply',
+    path: '/dashboard/procurement/equipment-supply',
+    icon: BoxIcon
+  },
+  {
+    label: 'ICT Equipment',
+    path: '/dashboard/procurement/ict-equipment',
+    icon: MonitorIcon
+  },
+  {
+    label: 'Nutrition Commodities',
+    path: '/dashboard/procurement/nutrition-commodities',
+    icon: HeartPulseIcon
+  },
+  {
+    label: 'PHC Small Equipments',
+    path: '/dashboard/procurement/phc-small-equipments',
+    icon: WrenchIcon
+  },
+  {
+    label: 'Doc Repo',
+    path: '/dashboard/procurement/doc-repo',
+    icon: FolderIcon
+  }]
+
+},
+{
+  key: 'sbc',
+  label: 'SBC',
+  icon: MegaphoneIcon,
+  basePath: '/dashboard/sbc',
+  subItems: [
+  {
+    label: 'SBC Targets',
+    path: '/dashboard/sbc/targets',
+    icon: TargetIcon
+  },
+  {
+    label: 'SBC Baseline',
+    path: '/dashboard/sbc/baseline',
+    icon: LineChartIcon
+  },
+  {
+    label: 'SBC Result Framework',
+    path: '/dashboard/sbc/result-framework',
+    icon: PieChartIcon
+  },
+  {
+    label: 'HPG Utilisation',
+    path: '/dashboard/sbc/hpg-utilisation',
+    icon: ActivityIcon
+  },
+  {
+    label: 'Doc Repo',
+    path: '/dashboard/sbc/doc-repo',
+    icon: FolderIcon
+  }]
+
+}];
+
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
@@ -25,10 +366,23 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { user, setUser, setSelectedBarangay } = useAppContext();
   const navigate = useNavigate();
   const location = useLocation();
-  const isLnapActive = location.pathname.includes('/dashboard/lnap');
-  const isEsmfActive = location.pathname.includes('/dashboard/esmf');
-  const [lnapExpanded, setLnapExpanded] = useState(isLnapActive);
-  const [esmfExpanded, setEsmfExpanded] = useState(isEsmfActive);
+  const [expandedModules, setExpandedModules] = useState<
+    Record<string, boolean>>(
+    () => {
+      const initial: Record<string, boolean> = {};
+      EXPANDABLE_MODULES.forEach((mod) => {
+        if (location.pathname.includes(mod.basePath)) {
+          initial[mod.key] = true;
+        }
+      });
+      return initial;
+    });
+  const toggleModule = (key: string) => {
+    setExpandedModules((prev) => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
   const handleLogout = () => {
     setUser(null);
     setSelectedBarangay(null);
@@ -105,197 +459,78 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             }
           </NavLink>
 
-          {/* Administration */}
-          <NavLink
-            to="/dashboard/administration"
-            onClick={onClose}
-            className={({ isActive }) =>
-            `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${isActive ? 'bg-primary/10 text-primary' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`
-            }>
-            
-            {({ isActive }) =>
-            <>
-                <ClipboardListIcon size={18} strokeWidth={isActive ? 2.5 : 2} />
-                <span>Administration</span>
-                {isActive &&
-              <motion.div
-                layoutId="nav-indicator"
-                className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />
+          {/* Expandable Modules (alphabetical) */}
+          {EXPANDABLE_MODULES.map((mod) => {
+            const isModActive = location.pathname.includes(mod.basePath);
+            const isExpanded = expandedModules[mod.key] || false;
+            return (
+              <div key={mod.key}>
+                <button
+                  onClick={() => toggleModule(mod.key)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${isModActive ? 'bg-primary/10 text-primary' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}>
+                  
+                  <mod.icon size={18} strokeWidth={isModActive ? 2.5 : 2} />
+                  <span>{mod.label}</span>
+                  <span className="ml-auto">
+                    {isExpanded ?
+                    <ChevronDownIcon size={16} /> :
 
-              }
-              </>
-            }
-          </NavLink>
-
-          {/* LNAP - Expandable */}
-          <div>
-            <button
-              onClick={() => setLnapExpanded(!lnapExpanded)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${isLnapActive ? 'bg-primary/10 text-primary' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}>
-              
-              <FileTextIcon size={18} strokeWidth={isLnapActive ? 2.5 : 2} />
-              <span>LNAP</span>
-              <span className="ml-auto">
-                {lnapExpanded ?
-                <ChevronDownIcon size={16} /> :
-
-                <ChevronRightIcon size={16} />
-                }
-              </span>
-            </button>
-
-            <AnimatePresence>
-              {lnapExpanded &&
-              <motion.div
-                initial={{
-                  height: 0,
-                  opacity: 0
-                }}
-                animate={{
-                  height: 'auto',
-                  opacity: 1
-                }}
-                exit={{
-                  height: 0,
-                  opacity: 0
-                }}
-                transition={{
-                  duration: 0.2
-                }}
-                className="overflow-hidden">
-                
-                  <div className="ml-4 mt-1 space-y-0.5 border-l-2 border-gray-100 pl-3">
-                    <NavLink
-                    to="/dashboard/lnap/status"
-                    onClick={onClose}
-                    className={({ isActive }) =>
-                    `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all ${isActive ? 'bg-primary/10 text-primary font-medium' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'}`
-                    }>
-                    
-                      {({ isActive }) =>
-                    <>
-                          <ClipboardCheckIcon
-                        size={15}
-                        strokeWidth={isActive ? 2.5 : 2} />
-                      
-                          <span>LNAP Status</span>
-                          {isActive &&
-                      <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />
-                      }
-                        </>
+                    <ChevronRightIcon size={16} />
                     }
-                    </NavLink>
+                  </span>
+                </button>
 
-                    <NavLink
-                    to="/dashboard/lnap/lnc-status"
-                    onClick={onClose}
-                    className={({ isActive }) =>
-                    `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all ${isActive ? 'bg-primary/10 text-primary font-medium' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'}`
-                    }>
+                <AnimatePresence>
+                  {isExpanded &&
+                  <motion.div
+                    initial={{
+                      height: 0,
+                      opacity: 0
+                    }}
+                    animate={{
+                      height: 'auto',
+                      opacity: 1
+                    }}
+                    exit={{
+                      height: 0,
+                      opacity: 0
+                    }}
+                    transition={{
+                      duration: 0.2
+                    }}
+                    className="overflow-hidden">
                     
-                      {({ isActive }) =>
-                    <>
-                          <UsersIcon
-                        size={15}
-                        strokeWidth={isActive ? 2.5 : 2} />
-                      
-                          <span>LNC Status</span>
-                          {isActive &&
-                      <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />
-                      }
-                        </>
-                    }
-                    </NavLink>
-                  </div>
-                </motion.div>
-              }
-            </AnimatePresence>
-          </div>
+                      <div className="ml-4 mt-1 space-y-0.5 border-l-2 border-gray-100 pl-3">
+                        {mod.subItems.map((sub) =>
+                      <NavLink
+                        key={sub.path}
+                        to={sub.path}
+                        onClick={onClose}
+                        className={({ isActive }) =>
+                        `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all ${isActive ? 'bg-primary/10 text-primary font-medium' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'}`
+                        }>
+                        
+                            {({ isActive }) =>
+                        <>
+                                <sub.icon
+                            size={15}
+                            strokeWidth={isActive ? 2.5 : 2} />
+                          
+                                <span className="truncate">{sub.label}</span>
+                                {isActive &&
+                          <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                          }
+                              </>
+                        }
+                          </NavLink>
+                      )}
+                      </div>
+                    </motion.div>
+                  }
+                </AnimatePresence>
+              </div>);
 
-          {/* ESMF - Expandable */}
-          <div>
-            <button
-              onClick={() => setEsmfExpanded(!esmfExpanded)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${isEsmfActive ? 'bg-primary/10 text-primary' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}>
-              
-              <ShieldCheckIcon size={18} strokeWidth={isEsmfActive ? 2.5 : 2} />
-              <span>ESMF</span>
-              <span className="ml-auto">
-                {esmfExpanded ?
-                <ChevronDownIcon size={16} /> :
-
-                <ChevronRightIcon size={16} />
-                }
-              </span>
-            </button>
-
-            <AnimatePresence>
-              {esmfExpanded &&
-              <motion.div
-                initial={{
-                  height: 0,
-                  opacity: 0
-                }}
-                animate={{
-                  height: 'auto',
-                  opacity: 1
-                }}
-                exit={{
-                  height: 0,
-                  opacity: 0
-                }}
-                transition={{
-                  duration: 0.2
-                }}
-                className="overflow-hidden">
-                
-                  <div className="ml-4 mt-1 space-y-0.5 border-l-2 border-gray-100 pl-3">
-                    <NavLink
-                    to="/dashboard/esmf/grievance"
-                    onClick={onClose}
-                    className={({ isActive }) =>
-                    `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all ${isActive ? 'bg-primary/10 text-primary font-medium' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'}`
-                    }>
-                    
-                      {({ isActive }) =>
-                    <>
-                          <AlertTriangleIcon
-                        size={15}
-                        strokeWidth={isActive ? 2.5 : 2} />
-                      
-                          <span>Grievance Intake</span>
-                          {isActive &&
-                      <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />
-                      }
-                        </>
-                    }
-                    </NavLink>
-
-                    <NavLink
-                    to="/dashboard/esmf/feedback"
-                    onClick={onClose}
-                    className={({ isActive }) =>
-                    `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all ${isActive ? 'bg-primary/10 text-primary font-medium' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'}`
-                    }>
-                    
-                      {({ isActive }) =>
-                    <>
-                          <MessageSquareIcon
-                        size={15}
-                        strokeWidth={isActive ? 2.5 : 2} />
-                      
-                          <span>Feedback Form</span>
-                          {isActive &&
-                      <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />
-                      }
-                        </>
-                    }
-                    </NavLink>
-                  </div>
-                </motion.div>
-              }
-            </AnimatePresence>
-          </div>
+          })}
         </nav>
 
         {/* User */}

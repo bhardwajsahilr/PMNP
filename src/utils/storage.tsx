@@ -6,7 +6,8 @@ const KEYS = {
   LNAP: 'pmnp_lnap',
   LNC: 'pmnp_lnc',
   GIF: 'pmnp_gif',
-  PFF: 'pmnp_pff'
+  PFF: 'pmnp_pff',
+  ADMIN_DOCS: 'pmnp_admin_docs'
 } as const;
 export function storageGet<T>(key: string, fallback: T): T {
   try {
