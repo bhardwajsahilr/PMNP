@@ -72,7 +72,7 @@ const EXPANDABLE_MODULES: ExpandableModule[] = [
     icon: UsersIcon
   },
   {
-    label: 'Doc Repo',
+    label: 'Document Repository',
     path: '/dashboard/administration/doc-repo',
     icon: FolderIcon
   }]
@@ -105,7 +105,7 @@ const EXPANDABLE_MODULES: ExpandableModule[] = [
     icon: MapPinIcon
   },
   {
-    label: 'Doc Repo',
+    label: 'Document Repository',
     path: '/dashboard/capacity-building/doc-repo',
     icon: FolderIcon
   }]
@@ -176,7 +176,7 @@ const EXPANDABLE_MODULES: ExpandableModule[] = [
     icon: FileTextIcon
   },
   {
-    label: 'Doc Repo',
+    label: 'Document Repository',
     path: '/dashboard/finance/doc-repo',
     icon: FolderIcon
   }]
@@ -232,7 +232,7 @@ const EXPANDABLE_MODULES: ExpandableModule[] = [
     icon: ActivityIcon
   },
   {
-    label: 'Doc Repo',
+    label: 'Document Repository',
     path: '/dashboard/me/doc-repo',
     icon: FolderIcon
   }]
@@ -280,7 +280,7 @@ const EXPANDABLE_MODULES: ExpandableModule[] = [
     icon: FileCheckIcon
   },
   {
-    label: 'Doc Repo',
+    label: 'Document Repository',
     path: '/dashboard/pbg/doc-repo',
     icon: FolderIcon
   }]
@@ -318,7 +318,7 @@ const EXPANDABLE_MODULES: ExpandableModule[] = [
     icon: WrenchIcon
   },
   {
-    label: 'Doc Repo',
+    label: 'Document Repository',
     path: '/dashboard/procurement/doc-repo',
     icon: FolderIcon
   }]
@@ -351,7 +351,7 @@ const EXPANDABLE_MODULES: ExpandableModule[] = [
     icon: ActivityIcon
   },
   {
-    label: 'Doc Repo',
+    label: 'Document Repository',
     path: '/dashboard/sbc/doc-repo',
     icon: FolderIcon
   }]

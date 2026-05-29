@@ -967,19 +967,6 @@ function LncList({
                     
                       <EyeIcon size={15} />
                     </button>
-                    <button
-                    className="p-1.5 rounded-lg hover:bg-primary-100 text-primary transition-all hover:scale-110"
-                    title="Edit">
-                    
-                      <PencilIcon size={15} />
-                    </button>
-                    <button
-                    onClick={() => onDelete(r.id)}
-                    className="p-1.5 rounded-lg hover:bg-alert-100 text-alert transition-all hover:scale-110"
-                    title="Delete">
-                    
-                      <Trash2Icon size={15} />
-                    </button>
                   </div>
                 </td>
               </tr>
@@ -1015,12 +1002,6 @@ function LncList({
               </button>
               <button className="p-1.5 rounded-lg hover:bg-primary-50 text-primary transition-colors">
                 <PencilIcon size={14} />
-              </button>
-              <button
-              onClick={() => onDelete(r.id)}
-              className="p-1.5 rounded-lg hover:bg-alert-50 text-alert transition-colors">
-              
-                <Trash2Icon size={14} />
               </button>
             </div>
           </div>

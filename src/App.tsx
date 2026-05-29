@@ -12,6 +12,11 @@ import { GrievanceIntakePage } from './pages/GrievanceIntakePage';
 import { FeedbackFormPage } from './pages/FeedbackFormPage';
 import { PlaceholderPage } from './components/PlaceholderPage';
 import { AdminDocRepoPage } from './pages/AdminDocRepoPage';
+import { ProcAnthropometryPage } from './pages/ProcAnthropometryPage';
+import { ProcEquipmentSupplyPage } from './pages/ProcEquipmentSupplyPage';
+import { ProcIctEquipmentPage } from './pages/ProcIctEquipmentPage';
+import { ProcNutritionCommoditiesPage } from './pages/ProcNutritionCommoditiesPage';
+import { ProcPhcSmallEquipPage } from './pages/ProcPhcSmallEquipPage';
 export function App() {
   return (
     <AppProvider>
@@ -107,7 +112,7 @@ export function App() {
               path="capacity-building/doc-repo"
               element={
               <PlaceholderPage
-                title="Doc Repo"
+                title="Document Repository"
                 subtitle="Capacity Building document repository" />
 
               } />
@@ -194,7 +199,7 @@ export function App() {
               path="finance/doc-repo"
               element={
               <PlaceholderPage
-                title="Doc Repo"
+                title="Document Repository"
                 subtitle="Finance document repository" />
 
               } />
@@ -256,7 +261,7 @@ export function App() {
               path="me/doc-repo"
               element={
               <PlaceholderPage
-                title="Doc Repo"
+                title="Document Repository"
                 subtitle="M&E document repository" />
 
               } />
@@ -339,7 +344,7 @@ export function App() {
               path="pbg/doc-repo"
               element={
               <PlaceholderPage
-                title="Doc Repo"
+                title="Document Repository"
                 subtitle="PBG document repository" />
 
               } />
@@ -354,54 +359,29 @@ export function App() {
             
             <Route
               path="procurement/anthropometry"
-              element={
-              <PlaceholderPage
-                title="Anthropometry Supplies & Equipment"
-                subtitle="Manage anthropometry supplies and equipment" />
-
-              } />
+              element={<ProcAnthropometryPage />} />
             
             <Route
               path="procurement/equipment-supply"
-              element={
-              <PlaceholderPage
-                title="Equipment Supply"
-                subtitle="Track equipment supply procurement" />
-
-              } />
+              element={<ProcEquipmentSupplyPage />} />
             
             <Route
               path="procurement/ict-equipment"
-              element={
-              <PlaceholderPage
-                title="ICT Equipment"
-                subtitle="Manage ICT equipment procurement" />
-
-              } />
+              element={<ProcIctEquipmentPage />} />
             
             <Route
               path="procurement/nutrition-commodities"
-              element={
-              <PlaceholderPage
-                title="Nutrition Commodities"
-                subtitle="Track nutrition commodities procurement" />
-
-              } />
+              element={<ProcNutritionCommoditiesPage />} />
             
             <Route
               path="procurement/phc-small-equipments"
-              element={
-              <PlaceholderPage
-                title="PHC Small Equipments"
-                subtitle="Manage PHC small equipment procurement" />
-
-              } />
+              element={<ProcPhcSmallEquipPage />} />
             
             <Route
               path="procurement/doc-repo"
               element={
               <PlaceholderPage
-                title="Doc Repo"
+                title="Document Repository"
                 subtitle="Procurement document repository" />
 
               } />
@@ -452,7 +432,7 @@ export function App() {
               path="sbc/doc-repo"
               element={
               <PlaceholderPage
-                title="Doc Repo"
+                title="Document Repository"
                 subtitle="SBC document repository" />
 
               } />

@@ -105,7 +105,9 @@ export function AdminDocRepoPage() {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Doc Repo</h1>
+          <h1 className="text-xl font-bold text-gray-900">
+            Document Repository
+          </h1>
           <p className="text-sm text-gray-500">
             Administration document repository
           </p>
@@ -557,13 +559,6 @@ function DocList({
                     
                       <EyeIcon size={15} />
                     </button>
-                    <button
-                    onClick={() => onDelete(r.id)}
-                    className="p-1.5 rounded-lg hover:bg-alert-100 text-alert transition-all hover:scale-110"
-                    title="Delete">
-                    
-                      <Trash2Icon size={15} />
-                    </button>
                   </div>
                 </td>
               </tr>
@@ -614,12 +609,6 @@ function DocList({
                 className="p-1.5 rounded-lg hover:bg-secondary-50 text-secondary transition-colors">
                 
                   <EyeIcon size={14} />
-                </button>
-                <button
-                onClick={() => onDelete(r.id)}
-                className="p-1.5 rounded-lg hover:bg-alert-50 text-alert transition-colors">
-                
-                  <Trash2Icon size={14} />
                 </button>
               </div>
             </div>

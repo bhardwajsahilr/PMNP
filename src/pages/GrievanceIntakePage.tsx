@@ -1165,13 +1165,6 @@ function GifList({
                     
                       <EyeIcon size={15} />
                     </button>
-                    <button
-                    onClick={() => onDelete(r.id)}
-                    className="p-1.5 rounded-lg hover:bg-alert-100 text-alert transition-all hover:scale-110"
-                    title="Delete">
-                    
-                      <Trash2Icon size={15} />
-                    </button>
                   </div>
                 </td>
               </tr>
@@ -1216,12 +1209,6 @@ function GifList({
                 className="p-1.5 rounded-lg hover:bg-secondary-50 text-secondary transition-colors">
                 
                   <EyeIcon size={14} />
-                </button>
-                <button
-                onClick={() => onDelete(r.id)}
-                className="p-1.5 rounded-lg hover:bg-alert-50 text-alert transition-colors">
-                
-                  <Trash2Icon size={14} />
                 </button>
               </div>
             </div>

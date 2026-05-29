@@ -7,7 +7,12 @@ const KEYS = {
   LNC: 'pmnp_lnc',
   GIF: 'pmnp_gif',
   PFF: 'pmnp_pff',
-  ADMIN_DOCS: 'pmnp_admin_docs'
+  ADMIN_DOCS: 'pmnp_admin_docs',
+  PROC_ANTHRO: 'pmnp_proc_anthro',
+  PROC_EQUIP_SUPPLY: 'pmnp_proc_equip_supply',
+  PROC_ICT_EQUIP: 'pmnp_proc_ict_equip',
+  PROC_NUTRITION: 'pmnp_proc_nutrition',
+  PROC_PHC_EQUIP: 'pmnp_proc_phc_equip'
 } as const;
 export function storageGet<T>(key: string, fallback: T): T {
   try {
