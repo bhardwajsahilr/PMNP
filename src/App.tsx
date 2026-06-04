@@ -17,6 +17,7 @@ import { ProcEquipmentSupplyPage } from './pages/ProcEquipmentSupplyPage';
 import { ProcIctEquipmentPage } from './pages/ProcIctEquipmentPage';
 import { ProcNutritionCommoditiesPage } from './pages/ProcNutritionCommoditiesPage';
 import { ProcPhcSmallEquipPage } from './pages/ProcPhcSmallEquipPage';
+import { SbcTargetsPage } from './pages/SbcTargetsPage';
 export function App() {
   return (
     <AppProvider>
@@ -49,9 +50,36 @@ export function App() {
             {/* LNAP */}
             <Route
               path="lnap"
-              element={<Navigate to="/dashboard/lnap/status" replace />} />
+              element={<Navigate to="/dashboard/lnap/mnap-status" replace />} />
+            
+            <Route
+              path="lnap/mnap-status"
+              element={
+              <PlaceholderPage
+                title="MNAP Status"
+                subtitle="Municipal Nutrition Action Plan status tracking" />
+
+              } />
             
             <Route path="lnap/status" element={<LnapPage />} />
+            <Route
+              path="lnap/mnc-status"
+              element={
+              <PlaceholderPage
+                title="MNC Status"
+                subtitle="Municipal Nutrition Committee status tracking" />
+
+              } />
+            
+            <Route
+              path="lnap/bnc-status"
+              element={
+              <PlaceholderPage
+                title="BNC Status"
+                subtitle="Barangay Nutrition Committee status tracking" />
+
+              } />
+            
             <Route path="lnap/lnc-status" element={<LncStatusPage />} />
 
             {/* ESMF */}
@@ -392,15 +420,7 @@ export function App() {
               path="sbc"
               element={<Navigate to="/dashboard/sbc/targets" replace />} />
             
-            <Route
-              path="sbc/targets"
-              element={
-              <PlaceholderPage
-                title="SBC Targets"
-                subtitle="Social & Behavior Change target metrics" />
-
-              } />
-            
+            <Route path="sbc/targets" element={<SbcTargetsPage />} />
             <Route
               path="sbc/baseline"
               element={

@@ -189,13 +189,23 @@ const EXPANDABLE_MODULES: ExpandableModule[] = [
   basePath: '/dashboard/lnap',
   subItems: [
   {
-    label: 'LNAP Status',
+    label: 'MNAP Status',
+    path: '/dashboard/lnap/mnap-status',
+    icon: ClipboardCheckIcon
+  },
+  {
+    label: 'BNAP Status',
     path: '/dashboard/lnap/status',
     icon: ClipboardCheckIcon
   },
   {
-    label: 'LNC Status',
-    path: '/dashboard/lnap/lnc-status',
+    label: 'MNC Status',
+    path: '/dashboard/lnap/mnc-status',
+    icon: UsersIcon
+  },
+  {
+    label: 'BNC Status',
+    path: '/dashboard/lnap/bnc-status',
     icon: UsersIcon
   }]
 
@@ -331,7 +341,7 @@ const EXPANDABLE_MODULES: ExpandableModule[] = [
   basePath: '/dashboard/sbc',
   subItems: [
   {
-    label: 'SBC Targets',
+    label: 'SBC Target Form',
     path: '/dashboard/sbc/targets',
     icon: TargetIcon
   },

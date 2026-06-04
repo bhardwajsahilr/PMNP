@@ -1,274 +1,570 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   SearchIcon,
   PlusIcon,
   EyeIcon,
-  Trash2Icon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  ChevronDownIcon,
   CalendarIcon,
   UserIcon,
   FileWarningIcon,
-  TagIcon,
-  WrenchIcon,
   CheckCircleIcon,
-  LinkIcon,
-  PaperclipIcon,
   AlertTriangleIcon,
-  XIcon } from
+  XIcon,
+  SaveIcon,
+  PhoneIcon,
+  MailIcon,
+  MapPinIcon,
+  ClipboardCheckIcon,
+  SendIcon,
+  CircleCheckBigIcon } from
 'lucide-react';
 import { storageGet, storageSet, KEYS } from '../utils/storage';
 import { ViewModal } from '../components/ViewModal';
 import type { SectionDef } from '../components/ViewModal';
 type Tab = 'form' | 'list';
-const NATURE_OPTIONS = [
-'Type A - Environmental',
-'Type B - Social',
-'Type C - Health & Safety',
-'Type D - Financial',
-'Type E - Others'];
+const MODE_OF_FILING = [
+'Mail/Letter',
+'Text Message',
+'Email',
+'Phone',
+'Walk-In',
+'Suggestion Box',
+'Others'];
 
-const CATEGORY_MAP: Record<string, string[]> = {
-  'Type A - Environmental': [
-  'Pollution',
-  'Waste Management',
-  'Deforestation',
-  'Water Contamination'],
+const INTAKE_LEVELS = ['Central', 'Region', 'Municipality', 'Barangay'];
+const GRM_SOURCES = ['DSWD', 'DOH', 'LGU', 'Beneficiary', 'Others'];
+const GENDERS = ['Male', 'Female'];
+const IP_OPTIONS = ['Indigenous People (IP)', 'Non-IP'];
+const DESIGNATIONS = [
+'Project Beneficiary',
+'Barangay Health Worker',
+'Barangay Officials/Staff',
+'Member of any Indigenous Group',
+'Provincial Staff',
+'Regional Staff',
+'National Staff',
+'Municipal Staff',
+'Other Participating Agencies',
+'Others'];
 
-  'Type B - Social': [
-  'Displacement',
-  'Cultural Impact',
-  'Community Conflict',
-  'Land Rights'],
+const NATURE_TYPES = [
+'Type A: Questions or Recommendations',
+'Type B: Non-performance of obligation',
+'Type C: Compliance with procurement and financial management guidelines',
+'Type D: Compliance with DOH Primary Health Care Guidelines',
+'Type E: Compliance with labor management procedures'];
 
-  'Type C - Health & Safety': [
-  'Workplace Safety',
-  'Food Safety',
-  'Disease Outbreak',
-  'Sanitation'],
+const TYPE_A_CATEGORIES = [
+'Roles and Responsibilities',
+'Physical Implementation',
+'Finance Management',
+'Procurement',
+'Service Packages',
+'Recommendations regarding the implementation',
+'Other concerns'];
 
-  'Type D - Financial': [
-  'Fund Misuse',
-  'Delayed Payment',
-  'Budget Discrepancy',
-  'Procurement Issue']
+const TYPE_B_CATEGORIES = [
+'Significant changes in the implementation process without basis',
+'Non-compliance to MOA provisions between the LGU and the Implementing Agencies',
+'Sub-standard implementation of projects and/or interventions by the contractors',
+'Other concerns specify'];
 
-};
-const SEVERITY_OPTIONS = ['Low', 'Medium', 'High', 'Critical'];
-const STATUS_OPTIONS = ['Open', 'Under Investigation', 'Resolved', 'Closed'];
-interface GifRecord {
+const TYPE_C_CATEGORIES = [
+'Misuse of funds',
+'Allegations of corruption',
+'Falsification of public documents',
+'Preferential treatment to a particular contractor',
+'Other concerns'];
+
+const TYPE_D_CATEGORIES = [
+'Mishandling of primary care interventions resulting to adverse effects on the health of a beneficiary',
+'Other concerns'];
+
+const TYPE_E_CATEGORIES = [
+'Irregularities on the contract implementation and compliance by the Contractor',
+'Sexual harassment cases',
+'Administrative complaints against a Project Staff',
+'Non-payment of obligation to sub-contractors',
+'Non-inclusion of a stakeholder in convergence activities',
+'Non-inclusion of Indigenous People in the service delivery',
+'Non-inclusion of Indigenous People in the community consultations',
+'Others'];
+
+const RESOLUTION_STATUS = [
+'Completed',
+'No further complaint',
+'On-going',
+'Complaint dropped'];
+
+const SATISFACTION_OPTIONS = [
+'Very satisfied',
+'Satisfied',
+'Neutral',
+'Not Satisfied'];
+
+interface Grievance {
   id: number;
-  refNo: string;
-  dateReceived: string;
-  province: string;
-  municipality: string;
-  barangay: string;
-  isAnonymous: string;
-  complainantName: string;
+  // Intake
+  dateOfIntake: string;
+  modeOfFiling: string;
+  modeOfFilingOthers: string;
+  intakeLevel: string;
+  grmSource: string;
+  grmSourceOthers: string;
+  // Complainant
+  firstName: string;
+  middleInitial: string;
+  surname: string;
+  gender: string;
   contactNumber: string;
+  emailAddress: string;
+  ipStatus: string;
+  designation: string;
+  designationOtherAgencies: string;
+  designationOthers: string;
   address: string;
-  natureOfConcern: string;
-  othersSpecify: string;
-  description: string;
-  category: string;
-  severity: string;
-  actionTaken: string;
-  dateOfAction: string;
-  responsiblePerson: string;
-  status: string;
-  resolutionDetails: string;
-  dateResolved: string;
-  documentLink: string;
-  remarks: string;
+  // Concern
+  natureOfConcern: string[];
+  typeACategories: string[];
+  typeAOther: string;
+  typeBCategory: string;
+  typeBOther: string;
+  typeCCategory: string;
+  typeCOther: string;
+  typeDCategory: string;
+  typeDOther: string;
+  typeECategory: string;
+  typeEOther: string;
+  specificDetails: string;
+  dateOfIncident: string;
+  timeOfIncident: string;
+  locationOfIncident: string;
+  desiredOutcome: string;
+  desiredOutcomeDetails: string;
+  // Forwarded
+  areaForwardedTo: string;
+  dateOfForwarding: string;
+  dateOfReply: string;
+  // Closure
+  issuanceOfReply: string;
+  closureDate: string;
+  daysForProcessing: number;
+  statusOfResolution: string;
+  rateOfSatisfaction: string;
+  amountExecuted: number;
+  nameOfIntakeOffice: string;
+  designationClosure: string;
+  nameOfComplainant: string;
+  // Meta
+  isDraft: boolean;
 }
-const SEED_GIF: GifRecord[] = [
+const SEED: Grievance[] = [
 {
   id: 1,
-  refNo: 'GIF-001',
-  dateReceived: '2026-03-12',
-  province: 'Laguna',
-  municipality: 'Santa Rosa',
-  barangay: 'Balibago',
-  isAnonymous: 'No',
-  complainantName: 'Maria Santos',
-  contactNumber: '09171234567',
-  address: 'Purok 3, Balibago',
-  natureOfConcern: 'Type A - Environmental',
-  othersSpecify: '',
-  description:
-  "Improper waste disposal near the feeding center affecting children's health.",
-  category: 'Waste Management',
-  severity: 'High',
-  actionTaken: 'Coordinated with barangay officials for cleanup.',
-  dateOfAction: '2026-03-14',
-  responsiblePerson: 'Juan Dela Cruz',
-  status: 'Resolved',
-  resolutionDetails:
-  'Waste properly disposed. Warning issued to responsible party.',
-  dateResolved: '2026-03-18',
-  documentLink: '',
-  remarks: ''
+  dateOfIntake: '2026-03-15',
+  modeOfFiling: 'Email',
+  modeOfFilingOthers: '',
+  intakeLevel: 'Region',
+  grmSource: 'Beneficiary',
+  grmSourceOthers: '',
+  firstName: 'Maria',
+  middleInitial: 'L',
+  surname: 'Santos',
+  gender: 'Female',
+  contactNumber: '+63 917 555 1234',
+  emailAddress: 'maria.santos@example.com',
+  ipStatus: 'Non-IP',
+  designation: 'Project Beneficiary',
+  designationOtherAgencies: '',
+  designationOthers: '',
+  address: '123 Rizal Street, Brgy. Parian, Calamba, Laguna',
+  natureOfConcern: ['Type A: Questions or Recommendations'],
+  typeACategories: ['Service Packages'],
+  typeAOther: '',
+  typeBCategory: '',
+  typeBOther: '',
+  typeCCategory: '',
+  typeCOther: '',
+  typeDCategory: '',
+  typeDOther: '',
+  typeECategory: '',
+  typeEOther: '',
+  specificDetails:
+  'Inquiry about the next distribution schedule for nutrition commodities in our barangay.',
+  dateOfIncident: '',
+  timeOfIncident: '',
+  locationOfIncident: '',
+  desiredOutcome: 'Yes',
+  desiredOutcomeDetails: 'Request a clear schedule from the RPMO office.',
+  areaForwardedTo: 'RPMO Region IV-A',
+  dateOfForwarding: '2026-03-16',
+  dateOfReply: '2026-03-18',
+  issuanceOfReply: '2026-03-20',
+  closureDate: '2026-03-22',
+  daysForProcessing: 7,
+  statusOfResolution: 'Completed',
+  rateOfSatisfaction: 'Satisfied',
+  amountExecuted: 0,
+  nameOfIntakeOffice: 'MPMO Calamba',
+  designationClosure: 'Project Officer',
+  nameOfComplainant: 'Maria L Santos',
+  isDraft: false
 },
 {
   id: 2,
-  refNo: 'GIF-002',
-  dateReceived: '2026-03-08',
-  province: 'Laguna',
-  municipality: 'Calamba',
-  barangay: 'Parian',
-  isAnonymous: 'Yes',
-  complainantName: '',
-  contactNumber: '',
-  address: '',
-  natureOfConcern: 'Type D - Financial',
-  othersSpecify: '',
-  description: 'Alleged delayed payment of stipends for nutrition workers.',
-  category: 'Delayed Payment',
-  severity: 'Medium',
-  actionTaken: 'Forwarded to finance department for verification.',
-  dateOfAction: '2026-03-10',
-  responsiblePerson: 'Ana Reyes',
-  status: 'Under Investigation',
-  resolutionDetails: '',
-  dateResolved: '',
-  documentLink: '',
-  remarks: 'Awaiting finance report'
+  dateOfIntake: '2026-03-10',
+  modeOfFiling: 'Walk-In',
+  modeOfFilingOthers: '',
+  intakeLevel: 'Municipality',
+  grmSource: 'LGU',
+  grmSourceOthers: '',
+  firstName: 'Juan',
+  middleInitial: '',
+  surname: 'Dela Cruz',
+  gender: 'Male',
+  contactNumber: '+63 920 555 9876',
+  emailAddress: '',
+  ipStatus: 'Indigenous People (IP)',
+  designation: 'Member of any Indigenous Group',
+  designationOtherAgencies: '',
+  designationOthers: '',
+  address: 'Sitio Banawe, Brgy. Sampaloc, Tanay, Rizal',
+  natureOfConcern: ['Type E: Compliance with labor management procedures'],
+  typeACategories: [],
+  typeAOther: '',
+  typeBCategory: '',
+  typeBOther: '',
+  typeCCategory: '',
+  typeCOther: '',
+  typeDCategory: '',
+  typeDOther: '',
+  typeECategory:
+  'Non-inclusion of Indigenous People in the community consultations',
+  typeEOther: '',
+  specificDetails:
+  'Indigenous community was not invited to the recent consultation regarding nutrition program rollout.',
+  dateOfIncident: '2026-03-05',
+  timeOfIncident: '14:00',
+  locationOfIncident: 'Municipal Hall, Tanay, Rizal',
+  desiredOutcome: 'Yes',
+  desiredOutcomeDetails:
+  'Inclusion of IP representatives in all future consultations.',
+  areaForwardedTo: 'NPMO ESMF Unit',
+  dateOfForwarding: '2026-03-11',
+  dateOfReply: '',
+  issuanceOfReply: '',
+  closureDate: '',
+  daysForProcessing: 0,
+  statusOfResolution: 'On-going',
+  rateOfSatisfaction: '',
+  amountExecuted: 0,
+  nameOfIntakeOffice: 'MPMO Tanay',
+  designationClosure: '',
+  nameOfComplainant: 'Juan Dela Cruz',
+  isDraft: false
 },
 {
   id: 3,
-  refNo: 'GIF-003',
-  dateReceived: '2026-02-25',
-  province: 'Batangas',
-  municipality: 'Lipa',
-  barangay: 'Sabang',
-  isAnonymous: 'No',
-  complainantName: 'Pedro Ramos',
-  contactNumber: '09281234567',
-  address: 'Sitio Malaya, Sabang',
-  natureOfConcern: 'Type C - Health & Safety',
-  othersSpecify: '',
-  description: 'Unsanitary conditions at the supplementary feeding area.',
-  category: 'Sanitation',
-  severity: 'Critical',
-  actionTaken: 'Immediate inspection conducted.',
-  dateOfAction: '2026-02-26',
-  responsiblePerson: 'Dr. Liza Gomez',
-  status: 'Closed',
-  resolutionDetails: 'Feeding area sanitized and new protocols established.',
-  dateResolved: '2026-03-01',
-  documentLink: '',
-  remarks: ''
-},
-{
-  id: 4,
-  refNo: 'GIF-004',
-  dateReceived: '2026-02-15',
-  province: 'Quezon',
-  municipality: 'Lucena',
-  barangay: 'Ibabang Dupay',
-  isAnonymous: 'No',
-  complainantName: 'Rosa Villanueva',
-  contactNumber: '09351234567',
-  address: 'Zone 4, Ibabang Dupay',
-  natureOfConcern: 'Type E - Others',
-  othersSpecify: 'Scheduling conflict',
-  description:
-  'Nutrition sessions overlap with livelihood training schedule.',
-  category: 'Scheduling conflict',
-  severity: 'Low',
-  actionTaken: '',
-  dateOfAction: '',
-  responsiblePerson: '',
-  status: 'Open',
-  resolutionDetails: '',
-  dateResolved: '',
-  documentLink: '',
-  remarks: 'Needs coordination with DSWD'
+  dateOfIntake: '2026-02-28',
+  modeOfFiling: 'Phone',
+  modeOfFilingOthers: '',
+  intakeLevel: 'Barangay',
+  grmSource: 'DOH',
+  grmSourceOthers: '',
+  firstName: 'Anna',
+  middleInitial: 'M',
+  surname: 'Reyes',
+  gender: 'Female',
+  contactNumber: '',
+  emailAddress: '',
+  ipStatus: 'Non-IP',
+  designation: 'Barangay Health Worker',
+  designationOtherAgencies: '',
+  designationOthers: '',
+  address: '',
+  natureOfConcern: [],
+  typeACategories: [],
+  typeAOther: '',
+  typeBCategory: '',
+  typeBOther: '',
+  typeCCategory: '',
+  typeCOther: '',
+  typeDCategory: '',
+  typeDOther: '',
+  typeECategory: '',
+  typeEOther: '',
+  specificDetails: '',
+  dateOfIncident: '',
+  timeOfIncident: '',
+  locationOfIncident: '',
+  desiredOutcome: '',
+  desiredOutcomeDetails: '',
+  areaForwardedTo: '',
+  dateOfForwarding: '',
+  dateOfReply: '',
+  issuanceOfReply: '',
+  closureDate: '',
+  daysForProcessing: 0,
+  statusOfResolution: '',
+  rateOfSatisfaction: '',
+  amountExecuted: 0,
+  nameOfIntakeOffice: '',
+  designationClosure: '',
+  nameOfComplainant: 'Anna M Reyes',
+  isDraft: true
 }];
 
-function loadGif(): GifRecord[] {
-  return storageGet<GifRecord[]>(KEYS.GIF, SEED_GIF);
+function loadRecords(): Grievance[] {
+  return storageGet<Grievance[]>(KEYS.GRIEVANCES, SEED);
 }
-function saveGif(records: GifRecord[]) {
-  storageSet(KEYS.GIF, records);
+function saveRecords(records: Grievance[]) {
+  storageSet(KEYS.GRIEVANCES, records);
 }
-function StatusBadge({ value }: {value: string;}) {
-  const colorMap: Record<string, string> = {
-    Open: 'bg-blue-50 text-blue-700',
-    'Under Investigation': 'bg-amber-50 text-amber-700',
-    Resolved: 'bg-green-50 text-green-700',
-    Closed: 'bg-gray-100 text-gray-600'
+function getTodayString(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+function getOverallStatus(r: {
+  isDraft: boolean;
+  statusOfResolution: string;
+}): string {
+  if (r.isDraft) return 'Draft';
+  if (
+  r.statusOfResolution === 'Completed' ||
+  r.statusOfResolution === 'No further complaint' ||
+  r.statusOfResolution === 'Complaint dropped')
+
+  return 'Completed';
+  if (r.statusOfResolution === 'On-going') return 'On-going';
+  return 'Submitted';
+}
+function StatusBadge({
+  value,
+  size = 'sm'
+
+
+
+}: {value: string;size?: 'sm' | 'md';}) {
+  const cfg: Record<string, string> = {
+    Draft: 'bg-amber-50 text-amber-700 border border-amber-200',
+    Submitted: 'bg-blue-50 text-blue-700 border border-blue-200',
+    'On-going': 'bg-secondary-50 text-secondary border border-secondary-200',
+    Completed: 'bg-green-50 text-green-700 border border-green-200'
   };
+  const sizeCls = size === 'md' ? 'px-3 py-1 text-xs' : 'px-2.5 py-0.5 text-xs';
   return (
     <span
-      className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium ${colorMap[value] || 'bg-gray-100 text-gray-600'}`}>
+      className={`inline-block ${sizeCls} rounded-full font-medium ${cfg[value] || 'bg-gray-50 text-gray-700 border border-gray-200'}`}>
       
       {value}
     </span>);
 
 }
-function SeverityBadge({ value }: {value: string;}) {
-  const colorMap: Record<string, string> = {
-    Low: 'bg-green-50 text-green-700',
-    Medium: 'bg-amber-50 text-amber-700',
-    High: 'bg-orange-50 text-orange-700',
-    Critical: 'bg-red-50 text-red-700'
+function MultiSelect({
+  label,
+  options,
+  selected,
+  onChange,
+  placeholder,
+  error,
+  required
+
+
+
+
+
+
+
+
+}: {label: string;options: string[];selected: string[];onChange: (val: string[]) => void;placeholder?: string;error?: string;required?: boolean;}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+  const filtered = options.filter(
+    (o) =>
+    o.toLowerCase().includes(search.toLowerCase()) && !selected.includes(o)
+  );
+  const toggle = (val: string) => {
+    if (selected.includes(val)) onChange(selected.filter((s) => s !== val));else
+    onChange([...selected, val]);
   };
   return (
-    <span
-      className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium ${colorMap[value] || 'bg-gray-100 text-gray-600'}`}>
-      
-      {value}
-    </span>);
+    <div ref={ref} className="relative">
+      <label className="block text-xs font-medium text-gray-600 mb-1.5">
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      <div
+        onClick={() => setOpen(true)}
+        className={`min-h-[42px] px-3 py-2 rounded-lg border text-sm cursor-pointer flex flex-wrap gap-1.5 items-center bg-white ${error ? 'border-red-300 bg-red-50/30' : 'border-gray-200'} ${open ? 'ring-2 ring-secondary/30 border-secondary' : ''}`}>
+        
+        {selected.length === 0 &&
+        <span className="text-gray-400 text-sm">
+            {placeholder || 'Select...'}
+          </span>
+        }
+        {selected.map((s) =>
+        <span
+          key={s}
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-primary text-xs font-medium max-w-[260px]">
+          
+            <span className="truncate">{s}</span>
+            <button
+            onClick={(e) => {
+              e.stopPropagation();
+              toggle(s);
+            }}
+            className="hover:text-primary/70 flex-shrink-0">
+            
+              <XIcon size={12} />
+            </button>
+          </span>
+        )}
+        <ChevronDownIcon
+          size={14}
+          className="ml-auto text-gray-400 flex-shrink-0" />
+        
+      </div>
+      {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+      <AnimatePresence>
+        {open &&
+        <motion.div
+          initial={{
+            opacity: 0,
+            y: -4
+          }}
+          animate={{
+            opacity: 1,
+            y: 0
+          }}
+          exit={{
+            opacity: 0,
+            y: -4
+          }}
+          className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-hidden">
+          
+            <div className="p-2 border-b border-gray-100">
+              <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search..."
+              className="w-full px-2.5 py-1.5 rounded-md border border-gray-200 text-sm focus:outline-none focus:ring-1 focus:ring-secondary/30"
+              autoFocus />
+            
+            </div>
+            <div className="overflow-y-auto max-h-44">
+              {filtered.length === 0 ?
+            <div className="px-3 py-2 text-xs text-gray-400">
+                  No options found
+                </div> :
+
+            filtered.map((o) =>
+            <button
+              key={o}
+              onClick={() => {
+                toggle(o);
+                setSearch('');
+              }}
+              className="w-full text-left px-3 py-2 text-sm hover:bg-primary/5 text-gray-700 transition-colors">
+              
+                    {o}
+                  </button>
+            )
+            }
+            </div>
+          </motion.div>
+        }
+      </AnimatePresence>
+    </div>);
+
+}
+function CardHeader({
+  icon: Icon,
+  color,
+  title,
+  subtitle
+
+
+
+
+
+}: {icon: any;color: string;title: string;subtitle: string;}) {
+  return (
+    <>
+      <div className="flex items-center gap-3 px-5 sm:px-6 pt-5 sm:pt-6 pb-3">
+        <div
+          className={`w-9 h-9 rounded-lg ${color} flex items-center justify-center`}>
+          
+          <Icon size={18} />
+        </div>
+        <div>
+          <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
+          <p className="text-xs text-gray-400">{subtitle}</p>
+        </div>
+      </div>
+      <div className="border-t border-gray-100 mx-5 sm:mx-6" />
+    </>);
 
 }
 export function GrievanceIntakePage() {
   const [activeTab, setActiveTab] = useState<Tab>('form');
   const [searchQuery, setSearchQuery] = useState('');
-  const [records, setRecords] = useState<GifRecord[]>(loadGif);
-  const [viewRecord, setViewRecord] = useState<GifRecord | null>(null);
+  const [records, setRecords] = useState<Grievance[]>(loadRecords);
+  const [headerStatus, setHeaderStatus] = useState<string>('Draft');
   const handleAdd = useCallback(
-    (record: Omit<GifRecord, 'id' | 'refNo'>) => {
+    (record: Omit<Grievance, 'id'>) => {
       const nextId =
       records.length > 0 ? Math.max(...records.map((r) => r.id)) + 1 : 1;
-      const newRecord: GifRecord = {
+      const updated = [
+      {
         ...record,
-        id: nextId,
-        refNo: `GIF-${String(nextId).padStart(3, '0')}`
-      };
-      const updated = [newRecord, ...records];
+        id: nextId
+      },
+      ...records];
+
       setRecords(updated);
-      saveGif(updated);
+      saveRecords(updated);
       setActiveTab('list');
-    },
-    [records]
-  );
-  const handleDelete = useCallback(
-    (id: number) => {
-      const updated = records.filter((r) => r.id !== id);
-      setRecords(updated);
-      saveGif(updated);
     },
     [records]
   );
   const filteredRecords = records.filter(
     (r) =>
-    r.refNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    r.natureOfConcern.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    r.status.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    r.severity.toLowerCase().includes(searchQuery.toLowerCase())
+    r.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    r.surname.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    r.dateOfIntake.includes(searchQuery) ||
+    r.modeOfFiling.toLowerCase().includes(searchQuery.toLowerCase())
   );
   return (
     <div>
+      <div className="flex flex-col gap-1 mb-1">
+        <div className="text-xs text-gray-400">
+          PMNP / ESMF / Grievance Intake Form
+        </div>
+      </div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">
-            Grievance Intake Form
-          </h1>
-          <p className="text-sm text-gray-500">
-            Log and track community grievances and complaints
-          </p>
+        <div className="flex items-center gap-3">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">
+              Grievance Intake Form
+            </h1>
+            <p className="text-sm text-gray-500">
+              ESMF Module – Grievance Redress Mechanism
+            </p>
+          </div>
+          {activeTab === 'form' &&
+          <StatusBadge value={headerStatus} size="md" />
+          }
         </div>
         <div className="bg-gray-100 rounded-xl p-1 flex w-fit">
           {[
@@ -279,7 +575,7 @@ export function GrievanceIntakePage() {
           },
           {
             key: 'list' as Tab,
-            label: 'GIF Records',
+            label: 'Records',
             icon: SearchIcon
           }].
           map((tab) =>
@@ -290,7 +586,7 @@ export function GrievanceIntakePage() {
             
               {activeTab === tab.key &&
             <motion.div
-              layoutId="gif-tab"
+              layoutId="grievance-tab"
               className="absolute inset-0 bg-white rounded-lg shadow-sm"
               transition={{
                 type: 'spring',
@@ -303,7 +599,7 @@ export function GrievanceIntakePage() {
                 <tab.icon size={15} />
                 <span className="hidden sm:inline">{tab.label}</span>
                 <span className="sm:hidden">
-                  {tab.key === 'form' ? 'Form' : 'Records'}
+                  {tab.key === 'form' ? 'New' : 'Records'}
                 </span>
               </span>
             </button>
@@ -331,7 +627,10 @@ export function GrievanceIntakePage() {
             duration: 0.2
           }}>
           
-            <GifForm onSubmit={handleAdd} />
+            <GrievanceForm
+            onSubmit={handleAdd}
+            onStatusChange={setHeaderStatus} />
+          
           </motion.div> :
 
         <motion.div
@@ -352,11 +651,10 @@ export function GrievanceIntakePage() {
             duration: 0.2
           }}>
           
-            <GifList
+            <GrievanceList
             records={filteredRecords}
             searchQuery={searchQuery}
-            onSearch={setSearchQuery}
-            onDelete={handleDelete} />
+            onSearch={setSearchQuery} />
           
           </motion.div>
         }
@@ -364,494 +662,1535 @@ export function GrievanceIntakePage() {
     </div>);
 
 }
-function GifForm({
-  onSubmit
+const initialForm = {
+  dateOfIntake: getTodayString(),
+  modeOfFiling: '',
+  modeOfFilingOthers: '',
+  intakeLevel: '',
+  grmSource: '',
+  grmSourceOthers: '',
+  firstName: '',
+  middleInitial: '',
+  surname: '',
+  gender: '',
+  contactNumber: '',
+  emailAddress: '',
+  ipStatus: '',
+  designation: '',
+  designationOtherAgencies: '',
+  designationOthers: '',
+  address: '',
+  natureOfConcern: [] as string[],
+  typeACategories: [] as string[],
+  typeAOther: '',
+  typeBCategory: '',
+  typeBOther: '',
+  typeCCategory: '',
+  typeCOther: '',
+  typeDCategory: '',
+  typeDOther: '',
+  typeECategory: '',
+  typeEOther: '',
+  specificDetails: '',
+  dateOfIncident: '',
+  timeOfIncident: '',
+  locationOfIncident: '',
+  desiredOutcome: '',
+  desiredOutcomeDetails: '',
+  areaForwardedTo: '',
+  dateOfForwarding: '',
+  dateOfReply: '',
+  issuanceOfReply: '',
+  closureDate: '',
+  amountExecuted: 0,
+  statusOfResolution: '',
+  rateOfSatisfaction: '',
+  nameOfIntakeOffice: '',
+  designationClosure: ''
+};
+function GrievanceForm({
+  onSubmit,
+  onStatusChange
 
 
-}: {onSubmit: (r: Omit<GifRecord, 'id' | 'refNo'>) => void;}) {
-  const [form, setForm] = useState<Record<string, string>>({
-    dateReceived: '',
-    province: '',
-    municipality: '',
-    barangay: '',
-    isAnonymous: 'No',
-    complainantName: '',
-    contactNumber: '',
-    address: '',
-    natureOfConcern: '',
-    othersSpecify: '',
-    description: '',
-    category: '',
-    severity: '',
-    actionTaken: '',
-    dateOfAction: '',
-    responsiblePerson: '',
-    status: '',
-    resolutionDetails: '',
-    dateResolved: '',
-    documentLink: '',
-    remarks: ''
-  });
-  const [success, setSuccess] = useState(false);
-  const update = (field: string, value: string) => {
-    setForm((f) => {
-      const next = {
-        ...f,
-        [field]: value
-      };
-      if (field === 'natureOfConcern') {
-        next.category = '';
-        if (value !== 'Type E - Others') next.othersSpecify = '';
-      }
-      if (field === 'isAnonymous' && value === 'Yes') {
-        next.complainantName = '';
-        next.contactNumber = '';
-        next.address = '';
-      }
-      if (field === 'status' && value !== 'Resolved' && value !== 'Closed') {
-        next.dateResolved = '';
-      }
-      return next;
-    });
+
+}: {onSubmit: (r: Omit<Grievance, 'id'>) => void;onStatusChange: (s: string) => void;}) {
+  const [form, setForm] = useState(initialForm);
+  const [banner, setBanner] = useState<string>('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  // Auto-populated name of complainant
+  const nameOfComplainant = useMemo(() => {
+    return [form.firstName, form.middleInitial, form.surname].
+    filter(Boolean).
+    join(' ').
+    trim();
+  }, [form.firstName, form.middleInitial, form.surname]);
+  // Auto-calculated days for processing
+  const daysForProcessing = useMemo(() => {
+    if (!form.dateOfIntake || !form.closureDate) return 0;
+    const start = new Date(form.dateOfIntake);
+    const end = new Date(form.closureDate);
+    const diff = Math.floor(
+      (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    return diff < 0 ? 0 : diff;
+  }, [form.dateOfIntake, form.closureDate]);
+  // Header status reflects state
+  useEffect(() => {
+    if (!form.modeOfFiling && !form.firstName) {
+      onStatusChange('Draft');
+      return;
+    }
+    if (form.statusOfResolution === 'On-going') onStatusChange('On-going');else
+    if (form.statusOfResolution && form.statusOfResolution !== 'On-going')
+    onStatusChange('Completed');else
+    onStatusChange('Draft');
+  }, [
+  form.modeOfFiling,
+  form.firstName,
+  form.statusOfResolution,
+  onStatusChange]
+  );
+  const updateField = (field: string, value: any) => {
+    setForm((f) => ({
+      ...f,
+      [field]: value
+    }));
+    setErrors((e) => ({
+      ...e,
+      [field]: ''
+    }));
   };
-  const categories =
-  form.natureOfConcern === 'Type E - Others' ?
-  form.othersSpecify ?
-  [form.othersSpecify] :
-  [] :
-  CATEGORY_MAP[form.natureOfConcern] || [];
-  const handleSubmit = () => {
-    if (!form.dateReceived || !form.natureOfConcern || !form.description) return;
-    onSubmit(form as unknown as Omit<GifRecord, 'id' | 'refNo'>);
-    const resetForm: Record<string, string> = {};
-    Object.keys(form).forEach((k) => {
-      resetForm[k] = k === 'isAnonymous' ? 'No' : '';
-    });
-    setForm(resetForm);
-    setSuccess(true);
-    setTimeout(() => setSuccess(false), 2000);
+  const validate = (): boolean => {
+    const errs: Record<string, string> = {};
+    const today = getTodayString();
+    if (!form.dateOfIntake) errs.dateOfIntake = 'Date of Intake is required.';else
+    if (form.dateOfIntake > today)
+    errs.dateOfIntake = 'Date of Intake cannot be in the future.';
+    if (!form.modeOfFiling) errs.modeOfFiling = 'Mode of Filing is required.';
+    if (form.modeOfFiling === 'Others' && !form.modeOfFilingOthers.trim())
+    errs.modeOfFilingOthers = 'Please specify the mode of filing.';
+    if (!form.intakeLevel) errs.intakeLevel = 'Intake Level is required.';
+    if (!form.grmSource) errs.grmSource = 'GRM Source is required.';
+    if (form.grmSource === 'Others' && !form.grmSourceOthers.trim())
+    errs.grmSourceOthers = 'Please specify the GRM source.';
+    if (!form.firstName.trim()) errs.firstName = 'First Name is required.';
+    if (!form.surname.trim()) errs.surname = 'Surname is required.';
+    if (!form.gender) errs.gender = 'Gender is required.';
+    if (
+    form.emailAddress &&
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.emailAddress))
+
+    errs.emailAddress = 'Please enter a valid email address.';
+    if (form.contactNumber && !/^[+\d\s\-()]{7,}$/.test(form.contactNumber))
+    errs.contactNumber = 'Please enter a valid phone number.';
+    if (!form.ipStatus) errs.ipStatus = 'IP / Non-IP is required.';
+    if (!form.designation) errs.designation = 'Designation is required.';
+    if (
+    form.designation === 'Other Participating Agencies' &&
+    !form.designationOtherAgencies.trim())
+
+    errs.designationOtherAgencies = 'Please specify the agency.';
+    if (form.designation === 'Others' && !form.designationOthers.trim())
+    errs.designationOthers = 'Please specify the designation.';
+    if (form.natureOfConcern.length === 0)
+    errs.natureOfConcern = 'Please select at least one nature of concern.';
+    if (form.natureOfConcern.includes('Type A: Questions or Recommendations')) {
+      if (form.typeACategories.length === 0)
+      errs.typeACategories = 'Please select Type A category.';
+      if (
+      form.typeACategories.includes('Other concerns') &&
+      !form.typeAOther.trim())
+
+      errs.typeAOther = 'Please specify other concerns.';
+    }
+    if (
+    form.natureOfConcern.includes('Type B: Non-performance of obligation'))
+    {
+      if (!form.typeBCategory)
+      errs.typeBCategory = 'Please select Type B category.';
+      if (
+      form.typeBCategory === 'Other concerns specify' &&
+      !form.typeBOther.trim())
+
+      errs.typeBOther = 'Please specify other concerns.';
+    }
+    if (
+    form.natureOfConcern.includes(
+      'Type C: Compliance with procurement and financial management guidelines'
+    ))
+    {
+      if (!form.typeCCategory)
+      errs.typeCCategory = 'Please select Type C category.';
+      if (form.typeCCategory === 'Other concerns' && !form.typeCOther.trim())
+      errs.typeCOther = 'Please specify other concerns.';
+    }
+    if (
+    form.natureOfConcern.includes(
+      'Type D: Compliance with DOH Primary Health Care Guidelines'
+    ))
+    {
+      if (!form.typeDCategory)
+      errs.typeDCategory = 'Please select Type D category.';
+      if (form.typeDCategory === 'Other concerns' && !form.typeDOther.trim())
+      errs.typeDOther = 'Please specify other concerns.';
+    }
+    if (
+    form.natureOfConcern.includes(
+      'Type E: Compliance with labor management procedures'
+    ))
+    {
+      if (!form.typeECategory)
+      errs.typeECategory = 'Please select Type E category.';
+      if (form.typeECategory === 'Others' && !form.typeEOther.trim())
+      errs.typeEOther = 'Please specify other concerns.';
+    }
+    if (!form.specificDetails.trim())
+    errs.specificDetails = 'Specific details are required.';
+    if (form.dateOfIncident && form.dateOfIncident > today)
+    errs.dateOfIncident = 'Date of Incident cannot be in the future.';
+    if (!form.desiredOutcome) errs.desiredOutcome = 'Please select an option.';
+    if (form.desiredOutcome === 'Yes' && !form.desiredOutcomeDetails.trim())
+    errs.desiredOutcomeDetails =
+    'Please provide details of the desired outcome.';
+    if (
+    form.dateOfForwarding &&
+    form.dateOfReply &&
+    form.dateOfReply < form.dateOfForwarding)
+
+    errs.dateOfReply =
+    'Date of Reply cannot be earlier than Date of Forwarding.';
+    if (form.closureDate) {
+      if (form.dateOfIntake && form.closureDate < form.dateOfIntake)
+      errs.closureDate = 'Closure Date cannot be earlier than Date of Intake.';
+      if (form.issuanceOfReply && form.closureDate < form.issuanceOfReply)
+      errs.closureDate =
+      'Closure Date cannot be earlier than Issuance of Reply.';
+    }
+    if (form.amountExecuted < 0)
+    errs.amountExecuted = 'Amount cannot be negative.';
+    if (!form.statusOfResolution)
+    errs.statusOfResolution = 'Status of Resolution is required.';
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
   };
+  const showBanner = (msg: string) => {
+    setBanner(msg);
+    setTimeout(() => setBanner(''), 2200);
+  };
+  const handleSubmit = (isDraft: boolean) => {
+    if (!isDraft && !validate()) return;
+    if (isDraft && !form.firstName.trim() && !form.surname.trim()) {
+      setErrors({
+        firstName: 'Please enter at least a name to save draft.'
+      });
+      return;
+    }
+    const record: Omit<Grievance, 'id'> = {
+      ...form,
+      nameOfComplainant,
+      daysForProcessing,
+      isDraft
+    };
+    onSubmit(record);
+    setForm(initialForm);
+    showBanner(
+      isDraft ?
+      'Draft saved successfully.' :
+      'Grievance Intake Form has been submitted successfully.'
+    );
+  };
+  // Helper: input class
+  const inputCls = (err?: string, extra = '') =>
+  `w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all ${err ? 'border-red-300 bg-red-50/30' : 'border-gray-200'} ${extra}`;
+  const hasA = form.natureOfConcern.includes(
+    'Type A: Questions or Recommendations'
+  );
+  const hasB = form.natureOfConcern.includes(
+    'Type B: Non-performance of obligation'
+  );
+  const hasC = form.natureOfConcern.includes(
+    'Type C: Compliance with procurement and financial management guidelines'
+  );
+  const hasD = form.natureOfConcern.includes(
+    'Type D: Compliance with DOH Primary Health Care Guidelines'
+  );
+  const hasE = form.natureOfConcern.includes(
+    'Type E: Compliance with labor management procedures'
+  );
   return (
     <div className="space-y-5">
-      {success &&
-      <motion.div
-        initial={{
-          opacity: 0,
-          y: -10
-        }}
-        animate={{
-          opacity: 1,
-          y: 0
-        }}
-        className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 text-sm">
+      <AnimatePresence>
+        {banner &&
+        <motion.div
+          initial={{
+            opacity: 0,
+            y: -10
+          }}
+          animate={{
+            opacity: 1,
+            y: 0
+          }}
+          exit={{
+            opacity: 0,
+            y: -10
+          }}
+          className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 text-sm">
+          
+            <CheckCircleIcon size={18} />
+            {banner}
+          </motion.div>
+        }
+      </AnimatePresence>
+
+      {/* Section 1: Intake Information */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+        <CardHeader
+          icon={(p: any) => <CalendarIcon {...p} className="text-primary" />}
+          color="bg-primary/10"
+          title="Intake Information"
+          subtitle="Date, mode of filing, and source" />
         
-          <CheckCircleIcon size={18} />
-          Grievance record saved successfully!
-        </motion.div>
-      }
-
-      {/* 1. Basic Information */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="flex items-center gap-3 px-5 sm:px-6 pt-5 sm:pt-6 pb-3">
-          <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-            <CalendarIcon size={18} className="text-primary" />
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5 sm:p-6 pt-4">
           <div>
-            <h3 className="text-sm font-semibold text-gray-900">
-              Basic Information
-            </h3>
-            <p className="text-xs text-gray-400">Date and location details</p>
-          </div>
-        </div>
-        <div className="border-t border-primary/10 mx-5 sm:mx-6" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-5 sm:p-6 pt-4">
-          <FormField
-            label="Date Received"
-            type="date"
-            value={form.dateReceived}
-            onChange={(v) => update('dateReceived', v)} />
-          
-          <FormField
-            label="GIF Reference No."
-            type="text"
-            placeholder="Auto-generated"
-            disabled />
-          
-          <FormField
-            label="Province"
-            type="text"
-            placeholder="Enter province"
-            value={form.province}
-            onChange={(v) => update('province', v)} />
-          
-          <FormField
-            label="Municipality / City"
-            type="text"
-            placeholder="Enter municipality"
-            value={form.municipality}
-            onChange={(v) => update('municipality', v)} />
-          
-          <FormField
-            label="Barangay"
-            type="text"
-            placeholder="Enter barangay"
-            value={form.barangay}
-            onChange={(v) => update('barangay', v)} />
-          
-        </div>
-      </div>
-
-      {/* 2. Complainant Information */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="flex items-center gap-3 px-5 sm:px-6 pt-5 sm:pt-6 pb-3">
-          <div className="w-9 h-9 rounded-lg bg-secondary/10 flex items-center justify-center">
-            <UserIcon size={18} className="text-secondary" />
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900">
-              Complainant Information
-            </h3>
-            <p className="text-xs text-gray-400">
-              Identity and contact details
-            </p>
-          </div>
-        </div>
-        <div className="border-t border-secondary/10 mx-5 sm:mx-6" />
-        <div className="space-y-4 p-5 sm:p-6 pt-4">
-          <div className="max-w-xs">
             <label className="block text-xs font-medium text-gray-600 mb-1.5">
-              Is Anonymous?
+              Date of Intake <span className="text-red-500">*</span>
             </label>
-            <select
-              value={form.isAnonymous}
-              onChange={(e) => update('isAnonymous', e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all bg-white">
-              
-              <option value="No">No</option>
-              <option value="Yes">Yes</option>
-            </select>
-          </div>
-          {form.isAnonymous === 'No' &&
-          <motion.div
-            initial={{
-              opacity: 0,
-              height: 0
-            }}
-            animate={{
-              opacity: 1,
-              height: 'auto'
-            }}
-            exit={{
-              opacity: 0,
-              height: 0
-            }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <input
+              type="date"
+              max={getTodayString()}
+              value={form.dateOfIntake}
+              onChange={(e) => updateField('dateOfIntake', e.target.value)}
+              className={inputCls(errors.dateOfIntake)} />
             
-              <FormField
-              label="Name of Complainant"
-              type="text"
-              placeholder="Enter full name"
-              value={form.complainantName}
-              onChange={(v) => update('complainantName', v)} />
-            
-              <FormField
-              label="Contact Number"
-              type="text"
-              placeholder="09XX-XXX-XXXX"
-              value={form.contactNumber}
-              onChange={(v) => update('contactNumber', v)} />
-            
-              <FormField
-              label="Address"
-              type="text"
-              placeholder="Enter address"
-              value={form.address}
-              onChange={(v) => update('address', v)} />
-            
-            </motion.div>
-          }
-        </div>
-      </div>
-
-      {/* 3. Complaint Details */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="flex items-center gap-3 px-5 sm:px-6 pt-5 sm:pt-6 pb-3">
-          <div className="w-9 h-9 rounded-lg bg-purple-50 flex items-center justify-center">
-            <FileWarningIcon size={18} className="text-purple-600" />
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900">
-              Complaint Details
-            </h3>
-            <p className="text-xs text-gray-400">
-              Nature and description of the concern
-            </p>
-          </div>
-        </div>
-        <div className="border-t border-purple-100 mx-5 sm:mx-6" />
-        <div className="space-y-4 p-5 sm:p-6 pt-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">
-                Nature of Concern
-              </label>
-              <select
-                value={form.natureOfConcern}
-                onChange={(e) => update('natureOfConcern', e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all bg-white">
-                
-                <option value="">Select nature of concern</option>
-                {NATURE_OPTIONS.map((o) =>
-                <option key={o} value={o}>
-                    {o}
-                  </option>
-                )}
-              </select>
-            </div>
-            {form.natureOfConcern === 'Type E - Others' &&
-            <FormField
-              label="Please specify"
-              type="text"
-              placeholder="Specify the concern"
-              value={form.othersSpecify}
-              onChange={(v) => update('othersSpecify', v)} />
-
+            {errors.dateOfIntake &&
+            <p className="text-xs text-red-500 mt-1">{errors.dateOfIntake}</p>
             }
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1.5">
-              Description of Concern
-            </label>
-            <textarea
-              rows={4}
-              placeholder="Provide a detailed description of the concern..."
-              value={form.description}
-              onChange={(e) => update('description', e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all resize-none" />
-            
-          </div>
-        </div>
-      </div>
-
-      {/* 4. Category & Classification */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="flex items-center gap-3 px-5 sm:px-6 pt-5 sm:pt-6 pb-3">
-          <div className="w-9 h-9 rounded-lg bg-teal-50 flex items-center justify-center">
-            <TagIcon size={18} className="text-teal-600" />
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900">
-              Category & Classification
-            </h3>
-            <p className="text-xs text-gray-400">
-              Categorize and assess severity
-            </p>
-          </div>
-        </div>
-        <div className="border-t border-teal-100 mx-5 sm:mx-6" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5 sm:p-6 pt-4">
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1.5">
-              Category
+              Mode of Filing <span className="text-red-500">*</span>
             </label>
             <select
-              value={form.category}
-              onChange={(e) => update('category', e.target.value)}
-              disabled={
-              !form.natureOfConcern ||
-              form.natureOfConcern === 'Type E - Others' &&
-              !form.othersSpecify
-              }
-              className={`w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all ${!form.natureOfConcern ? 'bg-gray-50 text-gray-400' : 'bg-white'}`}>
+              value={form.modeOfFiling}
+              onChange={(e) => updateField('modeOfFiling', e.target.value)}
+              className={`${inputCls(errors.modeOfFiling)} bg-white`}>
               
-              <option value="">Select category</option>
-              {categories.map((c) =>
-              <option key={c} value={c}>
-                  {c}
+              <option value="">Select mode of filing</option>
+              {MODE_OF_FILING.map((o) =>
+              <option key={o} value={o}>
+                  {o}
                 </option>
               )}
             </select>
-            {!form.natureOfConcern &&
-            <p className="text-xs text-gray-400 mt-1">
-                Select Nature of Concern first
+            {errors.modeOfFiling &&
+            <p className="text-xs text-red-500 mt-1">{errors.modeOfFiling}</p>
+            }
+          </div>
+          <AnimatePresence>
+            {form.modeOfFiling === 'Others' &&
+            <motion.div
+              initial={{
+                opacity: 0,
+                height: 0
+              }}
+              animate={{
+                opacity: 1,
+                height: 'auto'
+              }}
+              exit={{
+                opacity: 0,
+                height: 0
+              }}
+              className="sm:col-span-2 overflow-hidden">
+              
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                  Mode of Filing - Others (Specify){' '}
+                  <span className="text-red-500">*</span>
+                </label>
+                <input
+                type="text"
+                value={form.modeOfFilingOthers}
+                onChange={(e) =>
+                updateField('modeOfFilingOthers', e.target.value)
+                }
+                placeholder="Specify other mode of filing"
+                className={inputCls(errors.modeOfFilingOthers)} />
+              
+                {errors.modeOfFilingOthers &&
+              <p className="text-xs text-red-500 mt-1">
+                    {errors.modeOfFilingOthers}
+                  </p>
+              }
+              </motion.div>
+            }
+          </AnimatePresence>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+              Intake Level <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={form.intakeLevel}
+              onChange={(e) => updateField('intakeLevel', e.target.value)}
+              className={`${inputCls(errors.intakeLevel)} bg-white`}>
+              
+              <option value="">Select intake level</option>
+              {INTAKE_LEVELS.map((o) =>
+              <option key={o} value={o}>
+                  {o}
+                </option>
+              )}
+            </select>
+            {errors.intakeLevel &&
+            <p className="text-xs text-red-500 mt-1">{errors.intakeLevel}</p>
+            }
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+              GRM Source <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={form.grmSource}
+              onChange={(e) => updateField('grmSource', e.target.value)}
+              className={`${inputCls(errors.grmSource)} bg-white`}>
+              
+              <option value="">Select GRM source</option>
+              {GRM_SOURCES.map((o) =>
+              <option key={o} value={o}>
+                  {o}
+                </option>
+              )}
+            </select>
+            {errors.grmSource &&
+            <p className="text-xs text-red-500 mt-1">{errors.grmSource}</p>
+            }
+          </div>
+          <AnimatePresence>
+            {form.grmSource === 'Others' &&
+            <motion.div
+              initial={{
+                opacity: 0,
+                height: 0
+              }}
+              animate={{
+                opacity: 1,
+                height: 'auto'
+              }}
+              exit={{
+                opacity: 0,
+                height: 0
+              }}
+              className="sm:col-span-2 overflow-hidden">
+              
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                  GRM Source - Others <span className="text-red-500">*</span>
+                </label>
+                <input
+                type="text"
+                value={form.grmSourceOthers}
+                onChange={(e) =>
+                updateField('grmSourceOthers', e.target.value)
+                }
+                placeholder="Specify other GRM source"
+                className={inputCls(errors.grmSourceOthers)} />
+              
+                {errors.grmSourceOthers &&
+              <p className="text-xs text-red-500 mt-1">
+                    {errors.grmSourceOthers}
+                  </p>
+              }
+              </motion.div>
+            }
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {/* Section 2: Complainant Information */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+        <CardHeader
+          icon={(p: any) => <UserIcon {...p} className="text-secondary" />}
+          color="bg-secondary/10"
+          title="Complainant / Sender Information"
+          subtitle="Personal information and contact details" />
+        
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-5 sm:p-6 pt-4">
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+              First Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={form.firstName}
+              onChange={(e) => updateField('firstName', e.target.value)}
+              placeholder="First name"
+              className={inputCls(errors.firstName)} />
+            
+            {errors.firstName &&
+            <p className="text-xs text-red-500 mt-1">{errors.firstName}</p>
+            }
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+              Middle Initial
+            </label>
+            <input
+              type="text"
+              value={form.middleInitial}
+              onChange={(e) => updateField('middleInitial', e.target.value)}
+              placeholder="M.I."
+              maxLength={3}
+              className={inputCls()} />
+            
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+              Surname <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={form.surname}
+              onChange={(e) => updateField('surname', e.target.value)}
+              placeholder="Surname"
+              className={inputCls(errors.surname)} />
+            
+            {errors.surname &&
+            <p className="text-xs text-red-500 mt-1">{errors.surname}</p>
+            }
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+              Gender <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={form.gender}
+              onChange={(e) => updateField('gender', e.target.value)}
+              className={`${inputCls(errors.gender)} bg-white`}>
+              
+              <option value="">Select gender</option>
+              {GENDERS.map((o) =>
+              <option key={o} value={o}>
+                  {o}
+                </option>
+              )}
+            </select>
+            {errors.gender &&
+            <p className="text-xs text-red-500 mt-1">{errors.gender}</p>
+            }
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+              Contact Number
+            </label>
+            <div className="relative">
+              <PhoneIcon
+                size={14}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              
+              <input
+                type="tel"
+                value={form.contactNumber}
+                onChange={(e) => updateField('contactNumber', e.target.value)}
+                placeholder="+63 9XX XXX XXXX"
+                className={`${inputCls(errors.contactNumber, 'pl-9')}`} />
+              
+            </div>
+            {errors.contactNumber &&
+            <p className="text-xs text-red-500 mt-1">
+                {errors.contactNumber}
               </p>
             }
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1.5">
-              Severity Level
+              Email Address
+            </label>
+            <div className="relative">
+              <MailIcon
+                size={14}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              
+              <input
+                type="email"
+                value={form.emailAddress}
+                onChange={(e) => updateField('emailAddress', e.target.value)}
+                placeholder="name@example.com"
+                className={`${inputCls(errors.emailAddress, 'pl-9')}`} />
+              
+            </div>
+            {errors.emailAddress &&
+            <p className="text-xs text-red-500 mt-1">{errors.emailAddress}</p>
+            }
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+              IP / Non-IP <span className="text-red-500">*</span>
             </label>
             <select
-              value={form.severity}
-              onChange={(e) => update('severity', e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all bg-white">
+              value={form.ipStatus}
+              onChange={(e) => updateField('ipStatus', e.target.value)}
+              className={`${inputCls(errors.ipStatus)} bg-white`}>
               
-              <option value="">Select severity</option>
-              {SEVERITY_OPTIONS.map((o) =>
+              <option value="">Select status</option>
+              {IP_OPTIONS.map((o) =>
+              <option key={o} value={o}>
+                  {o}
+                </option>
+              )}
+            </select>
+            {errors.ipStatus &&
+            <p className="text-xs text-red-500 mt-1">{errors.ipStatus}</p>
+            }
+          </div>
+          <div className="sm:col-span-2">
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+              Designation of Complainant / Sender{' '}
+              <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={form.designation}
+              onChange={(e) => updateField('designation', e.target.value)}
+              className={`${inputCls(errors.designation)} bg-white`}>
+              
+              <option value="">Select designation</option>
+              {DESIGNATIONS.map((o) =>
+              <option key={o} value={o}>
+                  {o}
+                </option>
+              )}
+            </select>
+            {errors.designation &&
+            <p className="text-xs text-red-500 mt-1">{errors.designation}</p>
+            }
+          </div>
+          <AnimatePresence>
+            {form.designation === 'Other Participating Agencies' &&
+            <motion.div
+              initial={{
+                opacity: 0,
+                height: 0
+              }}
+              animate={{
+                opacity: 1,
+                height: 'auto'
+              }}
+              exit={{
+                opacity: 0,
+                height: 0
+              }}
+              className="sm:col-span-3 overflow-hidden">
+              
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                  Other Participating Agencies{' '}
+                  <span className="text-red-500">*</span>
+                </label>
+                <input
+                type="text"
+                value={form.designationOtherAgencies}
+                onChange={(e) =>
+                updateField('designationOtherAgencies', e.target.value)
+                }
+                placeholder="Specify the agency"
+                className={inputCls(errors.designationOtherAgencies)} />
+              
+                {errors.designationOtherAgencies &&
+              <p className="text-xs text-red-500 mt-1">
+                    {errors.designationOtherAgencies}
+                  </p>
+              }
+              </motion.div>
+            }
+            {form.designation === 'Others' &&
+            <motion.div
+              initial={{
+                opacity: 0,
+                height: 0
+              }}
+              animate={{
+                opacity: 1,
+                height: 'auto'
+              }}
+              exit={{
+                opacity: 0,
+                height: 0
+              }}
+              className="sm:col-span-3 overflow-hidden">
+              
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                  Designation - Others <span className="text-red-500">*</span>
+                </label>
+                <input
+                type="text"
+                value={form.designationOthers}
+                onChange={(e) =>
+                updateField('designationOthers', e.target.value)
+                }
+                placeholder="Specify the designation"
+                className={inputCls(errors.designationOthers)} />
+              
+                {errors.designationOthers &&
+              <p className="text-xs text-red-500 mt-1">
+                    {errors.designationOthers}
+                  </p>
+              }
+              </motion.div>
+            }
+          </AnimatePresence>
+          <div className="sm:col-span-3">
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+              Address, Barangay, Municipality, Province
+            </label>
+            <textarea
+              rows={2}
+              value={form.address}
+              onChange={(e) => updateField('address', e.target.value)}
+              placeholder="Enter full address"
+              className={`${inputCls()} resize-none`} />
+            
+          </div>
+        </div>
+      </div>
+
+      {/* Section 3: Details of the Issue / Concern */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+        <CardHeader
+          icon={(p: any) =>
+          <FileWarningIcon {...p} className="text-rose-600" />
+          }
+          color="bg-rose-50"
+          title="Details of the Issue / Concern"
+          subtitle="Nature, categories, and specifics of the concern" />
+        
+        <div className="space-y-4 p-5 sm:p-6 pt-4">
+          <MultiSelect
+            label="Nature of Issue / Concern"
+            options={NATURE_TYPES}
+            selected={form.natureOfConcern}
+            onChange={(v) => updateField('natureOfConcern', v)}
+            placeholder="Select one or more concern types..."
+            error={errors.natureOfConcern}
+            required />
+          
+        </div>
+      </div>
+
+      {/* Conditional Type A Card */}
+      <AnimatePresence>
+        {hasA &&
+        <motion.div
+          initial={{
+            opacity: 0,
+            y: 10
+          }}
+          animate={{
+            opacity: 1,
+            y: 0
+          }}
+          exit={{
+            opacity: 0,
+            y: -10
+          }}
+          className="bg-white rounded-xl shadow-sm border border-gray-100">
+          
+            <CardHeader
+            icon={(p: any) =>
+            <FileWarningIcon {...p} className="text-purple-600" />
+            }
+            color="bg-purple-50"
+            title="Type A Concerns"
+            subtitle="Questions or Recommendations" />
+          
+            <div className="space-y-4 p-5 sm:p-6 pt-4">
+              <MultiSelect
+              label="Category of Concerns - Type A"
+              options={TYPE_A_CATEGORIES}
+              selected={form.typeACategories}
+              onChange={(v) => updateField('typeACategories', v)}
+              placeholder="Select Type A categories..."
+              error={errors.typeACategories}
+              required />
+            
+              <AnimatePresence>
+                {form.typeACategories.includes('Other concerns') &&
+              <motion.div
+                initial={{
+                  opacity: 0,
+                  height: 0
+                }}
+                animate={{
+                  opacity: 1,
+                  height: 'auto'
+                }}
+                exit={{
+                  opacity: 0,
+                  height: 0
+                }}
+                className="overflow-hidden">
+                
+                    <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                      Type A - Other Concerns{' '}
+                      <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                  type="text"
+                  value={form.typeAOther}
+                  onChange={(e) =>
+                  updateField('typeAOther', e.target.value)
+                  }
+                  placeholder="Specify other concerns"
+                  className={inputCls(errors.typeAOther)} />
+                
+                    {errors.typeAOther &&
+                <p className="text-xs text-red-500 mt-1">
+                        {errors.typeAOther}
+                      </p>
+                }
+                  </motion.div>
+              }
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        }
+      </AnimatePresence>
+
+      {/* Conditional Type B Card */}
+      <AnimatePresence>
+        {hasB &&
+        <motion.div
+          initial={{
+            opacity: 0,
+            y: 10
+          }}
+          animate={{
+            opacity: 1,
+            y: 0
+          }}
+          exit={{
+            opacity: 0,
+            y: -10
+          }}
+          className="bg-white rounded-xl shadow-sm border border-gray-100">
+          
+            <CardHeader
+            icon={(p: any) =>
+            <FileWarningIcon {...p} className="text-orange-600" />
+            }
+            color="bg-orange-50"
+            title="Type B Concerns"
+            subtitle="Non-performance of obligation" />
+          
+            <div className="space-y-4 p-5 sm:p-6 pt-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                  Category of Concerns - Type B{' '}
+                  <span className="text-red-500">*</span>
+                </label>
+                <select
+                value={form.typeBCategory}
+                onChange={(e) => updateField('typeBCategory', e.target.value)}
+                className={`${inputCls(errors.typeBCategory)} bg-white`}>
+                
+                  <option value="">Select Type B category</option>
+                  {TYPE_B_CATEGORIES.map((o) =>
+                <option key={o} value={o}>
+                      {o}
+                    </option>
+                )}
+                </select>
+                {errors.typeBCategory &&
+              <p className="text-xs text-red-500 mt-1">
+                    {errors.typeBCategory}
+                  </p>
+              }
+              </div>
+              <AnimatePresence>
+                {form.typeBCategory === 'Other concerns specify' &&
+              <motion.div
+                initial={{
+                  opacity: 0,
+                  height: 0
+                }}
+                animate={{
+                  opacity: 1,
+                  height: 'auto'
+                }}
+                exit={{
+                  opacity: 0,
+                  height: 0
+                }}
+                className="overflow-hidden">
+                
+                    <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                      Type B - Other Concerns{' '}
+                      <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                  type="text"
+                  value={form.typeBOther}
+                  onChange={(e) =>
+                  updateField('typeBOther', e.target.value)
+                  }
+                  placeholder="Specify other concerns"
+                  className={inputCls(errors.typeBOther)} />
+                
+                    {errors.typeBOther &&
+                <p className="text-xs text-red-500 mt-1">
+                        {errors.typeBOther}
+                      </p>
+                }
+                  </motion.div>
+              }
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        }
+      </AnimatePresence>
+
+      {/* Conditional Type C Card */}
+      <AnimatePresence>
+        {hasC &&
+        <motion.div
+          initial={{
+            opacity: 0,
+            y: 10
+          }}
+          animate={{
+            opacity: 1,
+            y: 0
+          }}
+          exit={{
+            opacity: 0,
+            y: -10
+          }}
+          className="bg-white rounded-xl shadow-sm border border-gray-100">
+          
+            <CardHeader
+            icon={(p: any) =>
+            <FileWarningIcon {...p} className="text-red-600" />
+            }
+            color="bg-red-50"
+            title="Type C Concerns"
+            subtitle="Procurement and financial management" />
+          
+            <div className="space-y-4 p-5 sm:p-6 pt-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                  Category of Concerns - Type C{' '}
+                  <span className="text-red-500">*</span>
+                </label>
+                <select
+                value={form.typeCCategory}
+                onChange={(e) => updateField('typeCCategory', e.target.value)}
+                className={`${inputCls(errors.typeCCategory)} bg-white`}>
+                
+                  <option value="">Select Type C category</option>
+                  {TYPE_C_CATEGORIES.map((o) =>
+                <option key={o} value={o}>
+                      {o}
+                    </option>
+                )}
+                </select>
+                {errors.typeCCategory &&
+              <p className="text-xs text-red-500 mt-1">
+                    {errors.typeCCategory}
+                  </p>
+              }
+              </div>
+              <AnimatePresence>
+                {form.typeCCategory === 'Other concerns' &&
+              <motion.div
+                initial={{
+                  opacity: 0,
+                  height: 0
+                }}
+                animate={{
+                  opacity: 1,
+                  height: 'auto'
+                }}
+                exit={{
+                  opacity: 0,
+                  height: 0
+                }}
+                className="overflow-hidden">
+                
+                    <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                      Type C - Other Concerns{' '}
+                      <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                  type="text"
+                  value={form.typeCOther}
+                  onChange={(e) =>
+                  updateField('typeCOther', e.target.value)
+                  }
+                  placeholder="Specify other concerns"
+                  className={inputCls(errors.typeCOther)} />
+                
+                    {errors.typeCOther &&
+                <p className="text-xs text-red-500 mt-1">
+                        {errors.typeCOther}
+                      </p>
+                }
+                  </motion.div>
+              }
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        }
+      </AnimatePresence>
+
+      {/* Conditional Type D Card */}
+      <AnimatePresence>
+        {hasD &&
+        <motion.div
+          initial={{
+            opacity: 0,
+            y: 10
+          }}
+          animate={{
+            opacity: 1,
+            y: 0
+          }}
+          exit={{
+            opacity: 0,
+            y: -10
+          }}
+          className="bg-white rounded-xl shadow-sm border border-gray-100">
+          
+            <CardHeader
+            icon={(p: any) =>
+            <FileWarningIcon {...p} className="text-teal-600" />
+            }
+            color="bg-teal-50"
+            title="Type D Concerns"
+            subtitle="DOH Primary Health Care Guidelines" />
+          
+            <div className="space-y-4 p-5 sm:p-6 pt-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                  Category of Concerns - Type D{' '}
+                  <span className="text-red-500">*</span>
+                </label>
+                <select
+                value={form.typeDCategory}
+                onChange={(e) => updateField('typeDCategory', e.target.value)}
+                className={`${inputCls(errors.typeDCategory)} bg-white`}>
+                
+                  <option value="">Select Type D category</option>
+                  {TYPE_D_CATEGORIES.map((o) =>
+                <option key={o} value={o}>
+                      {o}
+                    </option>
+                )}
+                </select>
+                {errors.typeDCategory &&
+              <p className="text-xs text-red-500 mt-1">
+                    {errors.typeDCategory}
+                  </p>
+              }
+              </div>
+              <AnimatePresence>
+                {form.typeDCategory === 'Other concerns' &&
+              <motion.div
+                initial={{
+                  opacity: 0,
+                  height: 0
+                }}
+                animate={{
+                  opacity: 1,
+                  height: 'auto'
+                }}
+                exit={{
+                  opacity: 0,
+                  height: 0
+                }}
+                className="overflow-hidden">
+                
+                    <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                      Type D - Other Concerns{' '}
+                      <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                  type="text"
+                  value={form.typeDOther}
+                  onChange={(e) =>
+                  updateField('typeDOther', e.target.value)
+                  }
+                  placeholder="Specify other concerns"
+                  className={inputCls(errors.typeDOther)} />
+                
+                    {errors.typeDOther &&
+                <p className="text-xs text-red-500 mt-1">
+                        {errors.typeDOther}
+                      </p>
+                }
+                  </motion.div>
+              }
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        }
+      </AnimatePresence>
+
+      {/* Conditional Type E Card */}
+      <AnimatePresence>
+        {hasE &&
+        <motion.div
+          initial={{
+            opacity: 0,
+            y: 10
+          }}
+          animate={{
+            opacity: 1,
+            y: 0
+          }}
+          exit={{
+            opacity: 0,
+            y: -10
+          }}
+          className="bg-white rounded-xl shadow-sm border border-gray-100">
+          
+            <CardHeader
+            icon={(p: any) =>
+            <FileWarningIcon {...p} className="text-indigo-600" />
+            }
+            color="bg-indigo-50"
+            title="Type E Concerns"
+            subtitle="Labor management procedures" />
+          
+            <div className="space-y-4 p-5 sm:p-6 pt-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                  Category of Concerns - Type E{' '}
+                  <span className="text-red-500">*</span>
+                </label>
+                <select
+                value={form.typeECategory}
+                onChange={(e) => updateField('typeECategory', e.target.value)}
+                className={`${inputCls(errors.typeECategory)} bg-white`}>
+                
+                  <option value="">Select Type E category</option>
+                  {TYPE_E_CATEGORIES.map((o) =>
+                <option key={o} value={o}>
+                      {o}
+                    </option>
+                )}
+                </select>
+                {errors.typeECategory &&
+              <p className="text-xs text-red-500 mt-1">
+                    {errors.typeECategory}
+                  </p>
+              }
+              </div>
+              <AnimatePresence>
+                {form.typeECategory === 'Others' &&
+              <motion.div
+                initial={{
+                  opacity: 0,
+                  height: 0
+                }}
+                animate={{
+                  opacity: 1,
+                  height: 'auto'
+                }}
+                exit={{
+                  opacity: 0,
+                  height: 0
+                }}
+                className="overflow-hidden">
+                
+                    <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                      Type E - Other Concerns{' '}
+                      <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                  type="text"
+                  value={form.typeEOther}
+                  onChange={(e) =>
+                  updateField('typeEOther', e.target.value)
+                  }
+                  placeholder="Specify other concerns"
+                  className={inputCls(errors.typeEOther)} />
+                
+                    {errors.typeEOther &&
+                <p className="text-xs text-red-500 mt-1">
+                        {errors.typeEOther}
+                      </p>
+                }
+                  </motion.div>
+              }
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        }
+      </AnimatePresence>
+
+      {/* Incident Details */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+        <CardHeader
+          icon={(p: any) => <MapPinIcon {...p} className="text-green-600" />}
+          color="bg-green-50"
+          title="Incident Details"
+          subtitle="When, where, and what happened" />
+        
+        <div className="space-y-4 p-5 sm:p-6 pt-4">
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+              Provide Specific Details of the Concern / Issue / Report{' '}
+              <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              rows={5}
+              value={form.specificDetails}
+              onChange={(e) => updateField('specificDetails', e.target.value)}
+              placeholder="Describe the issue, concern, incident, or report in detail."
+              className={`${inputCls(errors.specificDetails)} resize-none`} />
+            
+            {errors.specificDetails &&
+            <p className="text-xs text-red-500 mt-1">
+                {errors.specificDetails}
+              </p>
+            }
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                Date of Incident
+              </label>
+              <input
+                type="date"
+                max={getTodayString()}
+                value={form.dateOfIncident}
+                onChange={(e) => updateField('dateOfIncident', e.target.value)}
+                className={inputCls(errors.dateOfIncident)} />
+              
+              {errors.dateOfIncident &&
+              <p className="text-xs text-red-500 mt-1">
+                  {errors.dateOfIncident}
+                </p>
+              }
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                Time of Incident
+              </label>
+              <input
+                type="time"
+                value={form.timeOfIncident}
+                onChange={(e) => updateField('timeOfIncident', e.target.value)}
+                className={inputCls()} />
+              
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+              Location of Incident
+            </label>
+            <textarea
+              rows={2}
+              value={form.locationOfIncident}
+              onChange={(e) =>
+              updateField('locationOfIncident', e.target.value)
+              }
+              placeholder="House number, street, barangay, municipality, region."
+              className={`${inputCls()} resize-none`} />
+            
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+              Is there an outcome you would like in the resolution of the
+              concern that you have filed?{' '}
+              <span className="text-red-500">*</span>
+            </label>
+            <div className="flex items-center gap-4">
+              {['Yes', 'No'].map((opt) =>
+              <label
+                key={opt}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer transition-all ${form.desiredOutcome === opt ? 'border-primary bg-primary/5 text-primary' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                
+                  <input
+                  type="radio"
+                  name="desiredOutcome"
+                  value={opt}
+                  checked={form.desiredOutcome === opt}
+                  onChange={(e) =>
+                  updateField('desiredOutcome', e.target.value)
+                  }
+                  className="sr-only" />
+                
+                  <span
+                  className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${form.desiredOutcome === opt ? 'border-primary' : 'border-gray-300'}`}>
+                  
+                    {form.desiredOutcome === opt &&
+                  <span className="w-2 h-2 rounded-full bg-primary" />
+                  }
+                  </span>
+                  <span className="text-sm font-medium">{opt}</span>
+                </label>
+              )}
+            </div>
+            {errors.desiredOutcome &&
+            <p className="text-xs text-red-500 mt-1">
+                {errors.desiredOutcome}
+              </p>
+            }
+          </div>
+          <AnimatePresence>
+            {form.desiredOutcome === 'Yes' &&
+            <motion.div
+              initial={{
+                opacity: 0,
+                height: 0
+              }}
+              animate={{
+                opacity: 1,
+                height: 'auto'
+              }}
+              exit={{
+                opacity: 0,
+                height: 0
+              }}
+              className="overflow-hidden">
+              
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                  If yes, please provide details{' '}
+                  <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                rows={3}
+                value={form.desiredOutcomeDetails}
+                onChange={(e) =>
+                updateField('desiredOutcomeDetails', e.target.value)
+                }
+                placeholder="Describe the desired outcome..."
+                className={`${inputCls(errors.desiredOutcomeDetails)} resize-none`} />
+              
+                {errors.desiredOutcomeDetails &&
+              <p className="text-xs text-red-500 mt-1">
+                    {errors.desiredOutcomeDetails}
+                  </p>
+              }
+              </motion.div>
+            }
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {/* Section 4: Forwarded Details */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+        <CardHeader
+          icon={(p: any) => <SendIcon {...p} className="text-amber-600" />}
+          color="bg-amber-50"
+          title="Forwarded Details"
+          subtitle="Routing of the grievance" />
+        
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-5 sm:p-6 pt-4">
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+              Area Forwarded To
+            </label>
+            <input
+              type="text"
+              value={form.areaForwardedTo}
+              onChange={(e) => updateField('areaForwardedTo', e.target.value)}
+              placeholder="e.g. RPMO Region IV-A"
+              className={inputCls()} />
+            
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+              Date of Forwarding
+            </label>
+            <input
+              type="date"
+              value={form.dateOfForwarding}
+              onChange={(e) => updateField('dateOfForwarding', e.target.value)}
+              className={inputCls()} />
+            
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+              Date of Reply from the Area
+            </label>
+            <input
+              type="date"
+              value={form.dateOfReply}
+              onChange={(e) => updateField('dateOfReply', e.target.value)}
+              className={inputCls(errors.dateOfReply)} />
+            
+            {errors.dateOfReply &&
+            <p className="text-xs text-red-500 mt-1">{errors.dateOfReply}</p>
+            }
+          </div>
+        </div>
+      </div>
+
+      {/* Section 5: Case Closure */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+        <CardHeader
+          icon={(p: any) =>
+          <CircleCheckBigIcon {...p} className="text-indigo-600" />
+          }
+          color="bg-indigo-50"
+          title="Case Closure"
+          subtitle="Resolution and closure details" />
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5 sm:p-6 pt-4">
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+              Issuance of Reply to Complainant
+            </label>
+            <input
+              type="date"
+              value={form.issuanceOfReply}
+              onChange={(e) => updateField('issuanceOfReply', e.target.value)}
+              className={inputCls()} />
+            
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+              Closure Date
+            </label>
+            <input
+              type="date"
+              value={form.closureDate}
+              onChange={(e) => updateField('closureDate', e.target.value)}
+              className={inputCls(errors.closureDate)} />
+            
+            {errors.closureDate &&
+            <p className="text-xs text-red-500 mt-1">{errors.closureDate}</p>
+            }
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+              Days for Processing
+            </label>
+            <input
+              type="number"
+              value={daysForProcessing}
+              readOnly
+              className={`${inputCls()} bg-gray-50 text-gray-700 cursor-not-allowed`} />
+            
+            <p className="text-xs text-gray-400 mt-1">
+              Auto-calculated: Date of Intake → Closure Date
+            </p>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+              Status of Resolution <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={form.statusOfResolution}
+              onChange={(e) =>
+              updateField('statusOfResolution', e.target.value)
+              }
+              className={`${inputCls(errors.statusOfResolution)} bg-white`}>
+              
+              <option value="">Select status</option>
+              {RESOLUTION_STATUS.map((o) =>
+              <option key={o} value={o}>
+                  {o}
+                </option>
+              )}
+            </select>
+            {errors.statusOfResolution &&
+            <p className="text-xs text-red-500 mt-1">
+                {errors.statusOfResolution}
+              </p>
+            }
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+              Rate of Satisfaction
+            </label>
+            <select
+              value={form.rateOfSatisfaction}
+              onChange={(e) =>
+              updateField('rateOfSatisfaction', e.target.value)
+              }
+              className={`${inputCls()} bg-white`}>
+              
+              <option value="">Select rating</option>
+              {SATISFACTION_OPTIONS.map((o) =>
               <option key={o} value={o}>
                   {o}
                 </option>
               )}
             </select>
           </div>
-        </div>
-      </div>
-
-      {/* 5. Action Taken */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="flex items-center gap-3 px-5 sm:px-6 pt-5 sm:pt-6 pb-3">
-          <div className="w-9 h-9 rounded-lg bg-green-50 flex items-center justify-center">
-            <WrenchIcon size={18} className="text-green-600" />
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900">
-              Action Taken
-            </h3>
-            <p className="text-xs text-gray-400">
-              Response and responsible personnel
-            </p>
-          </div>
-        </div>
-        <div className="border-t border-green-100 mx-5 sm:mx-6" />
-        <div className="space-y-4 p-5 sm:p-6 pt-4">
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1.5">
-              Action Taken
+              Amount Executed for Case Processing
             </label>
-            <textarea
-              rows={3}
-              placeholder="Describe the action taken..."
-              value={form.actionTaken}
-              onChange={(e) => update('actionTaken', e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all resize-none" />
-            
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FormField
-              label="Date of Action"
-              type="date"
-              value={form.dateOfAction}
-              onChange={(v) => update('dateOfAction', v)} />
-            
-            <FormField
-              label="Responsible Person"
-              type="text"
-              placeholder="Enter name"
-              value={form.responsiblePerson}
-              onChange={(v) => update('responsiblePerson', v)} />
-            
-          </div>
-        </div>
-      </div>
-
-      {/* 6. Resolution */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="flex items-center gap-3 px-5 sm:px-6 pt-5 sm:pt-6 pb-3">
-          <div className="w-9 h-9 rounded-lg bg-accent/20 flex items-center justify-center">
-            <AlertTriangleIcon size={18} className="text-yellow-600" />
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900">Resolution</h3>
-            <p className="text-xs text-gray-400">
-              Current status and resolution details
-            </p>
-          </div>
-        </div>
-        <div className="border-t border-accent/20 mx-5 sm:mx-6" />
-        <div className="space-y-4 p-5 sm:p-6 pt-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">
-                Status
-              </label>
-              <select
-                value={form.status}
-                onChange={(e) => update('status', e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all bg-white">
-                
-                <option value="">Select status</option>
-                {STATUS_OPTIONS.map((o) =>
-                <option key={o} value={o}>
-                    {o}
-                  </option>
-                )}
-              </select>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+                ₱
+              </span>
+              <input
+                type="number"
+                min="0"
+                value={form.amountExecuted || ''}
+                onChange={(e) =>
+                updateField('amountExecuted', parseFloat(e.target.value) || 0)
+                }
+                placeholder="0.00"
+                className={`${inputCls(errors.amountExecuted, 'pl-7')}`} />
+              
             </div>
-            {(form.status === 'Resolved' || form.status === 'Closed') &&
-            <FormField
-              label="Date Resolved"
-              type="date"
-              value={form.dateResolved}
-              onChange={(v) => update('dateResolved', v)} />
-
+            {errors.amountExecuted &&
+            <p className="text-xs text-red-500 mt-1">
+                {errors.amountExecuted}
+              </p>
             }
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1.5">
-              Resolution Details
+              Name of Intake Office
             </label>
-            <textarea
-              rows={3}
-              placeholder="Describe the resolution..."
-              value={form.resolutionDetails}
-              onChange={(e) => update('resolutionDetails', e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all resize-none" />
+            <input
+              type="text"
+              value={form.nameOfIntakeOffice}
+              onChange={(e) =>
+              updateField('nameOfIntakeOffice', e.target.value)
+              }
+              placeholder="e.g. MPMO Calamba"
+              className={inputCls()} />
             
           </div>
-        </div>
-      </div>
-
-      {/* 7. Supporting Documents */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="flex items-center gap-3 px-5 sm:px-6 pt-5 sm:pt-6 pb-3">
-          <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center">
-            <PaperclipIcon size={18} className="text-gray-500" />
-          </div>
           <div>
-            <h3 className="text-sm font-semibold text-gray-900">
-              Supporting Documents
-            </h3>
-            <p className="text-xs text-gray-400">
-              Attach relevant files and notes
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+              Designation
+            </label>
+            <input
+              type="text"
+              value={form.designationClosure}
+              onChange={(e) =>
+              updateField('designationClosure', e.target.value)
+              }
+              placeholder="Designation of intake officer"
+              className={inputCls()} />
+            
+          </div>
+          <div className="sm:col-span-2">
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+              Name of Complainant / Sender
+            </label>
+            <input
+              type="text"
+              value={nameOfComplainant}
+              readOnly
+              placeholder="Auto-populated from name fields above"
+              className={`${inputCls()} bg-gray-50 text-gray-700 cursor-not-allowed`} />
+            
+            <p className="text-xs text-gray-400 mt-1">
+              Auto-populated from First Name + Middle Initial + Surname (used as
+              name in lieu of signature)
             </p>
           </div>
         </div>
-        <div className="border-t border-gray-100 mx-5 sm:mx-6" />
-        <div className="space-y-4 p-5 sm:p-6 pt-4">
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1.5">
-              Document Link (Google Drive)
-            </label>
-            <div className="relative">
-              <LinkIcon
-                size={16}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              
-              <input
-                type="url"
-                placeholder="https://drive.google.com/file/d/..."
-                value={form.documentLink}
-                onChange={(e) => update('documentLink', e.target.value)}
-                className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all" />
-              
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1.5">
-              Remarks
-            </label>
-            <textarea
-              rows={3}
-              placeholder="Add any remarks or notes..."
-              value={form.remarks}
-              onChange={(e) => update('remarks', e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all resize-none" />
-            
-          </div>
-        </div>
       </div>
 
-      <div className="flex justify-end">
+      {/* Action Buttons */}
+      <div className="flex justify-end gap-3">
         <motion.button
           whileHover={{
             scale: 1.01
@@ -859,239 +2198,273 @@ function GifForm({
           whileTap={{
             scale: 0.98
           }}
-          onClick={handleSubmit}
+          onClick={() => handleSubmit(true)}
+          className="flex items-center gap-2 px-6 py-2.5 border border-gray-200 text-gray-700 font-medium rounded-xl text-sm transition-all hover:bg-gray-50">
+          
+          <SaveIcon size={16} />
+          Save Draft
+        </motion.button>
+        <motion.button
+          whileHover={{
+            scale: 1.01
+          }}
+          whileTap={{
+            scale: 0.98
+          }}
+          onClick={() => handleSubmit(false)}
           className="px-8 py-2.5 bg-primary hover:bg-primary-600 text-white font-semibold rounded-xl text-sm transition-all shadow-lg shadow-primary/20">
           
-          Submit Grievance
+          Submit
         </motion.button>
       </div>
     </div>);
 
 }
-function FormField({
-  label,
-  type,
-  placeholder,
-  disabled,
-  className,
-  value,
-  onChange
-
-
-
-
-
-
-
-
-}: {label: string;type: string;placeholder?: string;disabled?: boolean;className?: string;value?: string;onChange?: (v: string) => void;}) {
-  return (
-    <div className={className}>
-      <label className="block text-xs font-medium text-gray-600 mb-1.5">
-        {label}
-      </label>
-      <input
-        type={type}
-        placeholder={placeholder}
-        disabled={disabled}
-        value={value || ''}
-        onChange={onChange ? (e) => onChange(e.target.value) : undefined}
-        className={`w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all ${disabled ? 'bg-gray-50 text-gray-400' : 'bg-white'}`} />
-      
-    </div>);
-
-}
-function GifList({
+function GrievanceList({
   records,
   searchQuery,
-  onSearch,
-  onDelete
+  onSearch
 
 
 
 
-
-}: {records: GifRecord[];searchQuery: string;onSearch: (q: string) => void;onDelete: (id: number) => void;}) {
+}: {records: Grievance[];searchQuery: string;onSearch: (q: string) => void;}) {
   const [page, setPage] = useState(1);
-  const [viewRecord, setViewRecord] = useState<GifRecord | null>(null);
+  const [viewRecord, setViewRecord] = useState<Grievance | null>(null);
   const perPage = 5;
   const totalPages = Math.max(1, Math.ceil(records.length / perPage));
   const paginated = records.slice((page - 1) * perPage, page * perPage);
-  function getViewSections(r: GifRecord): SectionDef[] {
-    const sections: SectionDef[] = [
+  function getViewSections(r: Grievance): SectionDef[] {
+    const status = getOverallStatus(r);
+    const statusColor =
+    status === 'Draft' ?
+    'bg-amber-50 text-amber-700' :
+    status === 'Completed' ?
+    'bg-green-50 text-green-700' :
+    status === 'On-going' ?
+    'bg-secondary-50 text-secondary' :
+    'bg-blue-50 text-blue-700';
+    return [
     {
-      title: 'Basic Information',
+      title: 'Intake Information',
       fields: [
       {
-        label: 'GIF Reference No.',
-        value: r.refNo
+        label: 'Date of Intake',
+        value: r.dateOfIntake
       },
       {
-        label: 'Date Received',
-        value: r.dateReceived
+        label: 'Mode of Filing',
+        value:
+        r.modeOfFiling + (
+        r.modeOfFilingOthers ? ` — ${r.modeOfFilingOthers}` : '')
       },
       {
-        label: 'Province',
-        value: r.province
+        label: 'Intake Level',
+        value: r.intakeLevel
       },
       {
-        label: 'Municipality / City',
-        value: r.municipality
+        label: 'GRM Source',
+        value:
+        r.grmSource + (
+        r.grmSourceOthers ? ` — ${r.grmSourceOthers}` : '')
       },
       {
-        label: 'Barangay',
-        value: r.barangay
+        label: 'Status',
+        value: status,
+        type: 'badge' as const,
+        badgeColor: statusColor
       }]
 
     },
     {
-      title: 'Complainant Information',
+      title: 'Complainant / Sender',
       fields: [
       {
-        label: 'Anonymous',
-        value: r.isAnonymous,
-        type: 'badge' as const,
-        badgeColor:
-        r.isAnonymous === 'Yes' ?
-        'bg-amber-50 text-amber-700' :
-        'bg-green-50 text-green-700'
+        label: 'Name',
+        value: r.nameOfComplainant
       },
-      ...(r.isAnonymous === 'No' ?
-      [
       {
-        label: 'Name of Complainant',
-        value: r.complainantName
+        label: 'Gender',
+        value: r.gender
       },
       {
         label: 'Contact Number',
-        value: r.contactNumber
+        value: r.contactNumber || '—'
+      },
+      {
+        label: 'Email Address',
+        value: r.emailAddress || '—'
+      },
+      {
+        label: 'IP / Non-IP',
+        value: r.ipStatus
+      },
+      {
+        label: 'Designation',
+        value:
+        r.designation + (
+        r.designationOtherAgencies ?
+        ` — ${r.designationOtherAgencies}` :
+        '') + (
+        r.designationOthers ? ` — ${r.designationOthers}` : '')
       },
       {
         label: 'Address',
-        value: r.address
-      }] :
-
-      [])]
+        value: r.address || '—'
+      }]
 
     },
     {
-      title: 'Complaint Details',
+      title: 'Concern Details',
       fields: [
       {
         label: 'Nature of Concern',
-        value: r.natureOfConcern
+        value: r.natureOfConcern.join(', ') || '—'
       },
-      ...(r.othersSpecify ?
+      ...(r.typeACategories.length ?
       [
       {
-        label: 'Others (Specify)',
-        value: r.othersSpecify
+        label: 'Type A Categories',
+        value:
+        r.typeACategories.join(', ') + (
+        r.typeAOther ? ` — ${r.typeAOther}` : '')
+      }] :
+
+      []),
+      ...(r.typeBCategory ?
+      [
+      {
+        label: 'Type B Category',
+        value:
+        r.typeBCategory + (
+        r.typeBOther ? ` — ${r.typeBOther}` : '')
+      }] :
+
+      []),
+      ...(r.typeCCategory ?
+      [
+      {
+        label: 'Type C Category',
+        value:
+        r.typeCCategory + (
+        r.typeCOther ? ` — ${r.typeCOther}` : '')
+      }] :
+
+      []),
+      ...(r.typeDCategory ?
+      [
+      {
+        label: 'Type D Category',
+        value:
+        r.typeDCategory + (
+        r.typeDOther ? ` — ${r.typeDOther}` : '')
+      }] :
+
+      []),
+      ...(r.typeECategory ?
+      [
+      {
+        label: 'Type E Category',
+        value:
+        r.typeECategory + (
+        r.typeEOther ? ` — ${r.typeEOther}` : '')
       }] :
 
       []),
       {
-        label: 'Description',
-        value: r.description
+        label: 'Specific Details',
+        value: r.specificDetails || '—'
+      },
+      {
+        label: 'Date / Time of Incident',
+        value: r.dateOfIncident ?
+        `${r.dateOfIncident}${r.timeOfIncident ? ' at ' + r.timeOfIncident : ''}` :
+        '—'
+      },
+      {
+        label: 'Location of Incident',
+        value: r.locationOfIncident || '—'
+      },
+      {
+        label: 'Desired Outcome',
+        value:
+        r.desiredOutcome + (
+        r.desiredOutcomeDetails ? ` — ${r.desiredOutcomeDetails}` : '')
       }]
 
     },
     {
-      title: 'Category & Classification',
+      title: 'Forwarded Details',
       fields: [
       {
-        label: 'Category',
-        value: r.category
+        label: 'Area Forwarded To',
+        value: r.areaForwardedTo || '—'
       },
       {
-        label: 'Severity',
-        value: r.severity,
-        type: 'badge' as const,
-        badgeColor:
-        r.severity === 'Critical' ?
-        'bg-red-50 text-red-700' :
-        r.severity === 'High' ?
-        'bg-orange-50 text-orange-700' :
-        r.severity === 'Medium' ?
-        'bg-amber-50 text-amber-700' :
-        'bg-green-50 text-green-700'
+        label: 'Date of Forwarding',
+        value: r.dateOfForwarding || '—'
+      },
+      {
+        label: 'Date of Reply',
+        value: r.dateOfReply || '—'
       }]
 
     },
     {
-      title: 'Action Taken',
+      title: 'Case Closure',
       fields: [
       {
-        label: 'Action Taken',
-        value: r.actionTaken
+        label: 'Issuance of Reply',
+        value: r.issuanceOfReply || '—'
       },
       {
-        label: 'Date of Action',
-        value: r.dateOfAction
+        label: 'Closure Date',
+        value: r.closureDate || '—'
       },
       {
-        label: 'Responsible Person',
-        value: r.responsiblePerson
-      }]
-
-    },
-    {
-      title: 'Resolution',
-      fields: [
-      {
-        label: 'Status',
-        value: r.status,
-        type: 'badge' as const,
-        badgeColor:
-        r.status === 'Resolved' ?
-        'bg-green-50 text-green-700' :
-        r.status === 'Closed' ?
-        'bg-gray-100 text-gray-600' :
-        r.status === 'Under Investigation' ?
-        'bg-amber-50 text-amber-700' :
-        'bg-blue-50 text-blue-700'
+        label: 'Days for Processing',
+        value: String(r.daysForProcessing)
       },
       {
-        label: 'Resolution Details',
-        value: r.resolutionDetails
+        label: 'Status of Resolution',
+        value: r.statusOfResolution || '—'
       },
       {
-        label: 'Date Resolved',
-        value: r.dateResolved
-      }]
-
-    },
-    {
-      title: 'Supporting Documents',
-      fields: [
-      {
-        label: 'Document Link',
-        value: r.documentLink,
-        type: 'link' as const
+        label: 'Rate of Satisfaction',
+        value: r.rateOfSatisfaction || '—'
       },
       {
-        label: 'Remarks',
-        value: r.remarks
+        label: 'Amount Executed',
+        value: r.amountExecuted ?
+        `₱ ${r.amountExecuted.toLocaleString()}` :
+        '—'
+      },
+      {
+        label: 'Name of Intake Office',
+        value: r.nameOfIntakeOffice || '—'
+      },
+      {
+        label: 'Designation',
+        value: r.designationClosure || '—'
       }]
 
     }];
 
-    return sections;
   }
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100">
       <ViewModal
         isOpen={!!viewRecord}
         onClose={() => setViewRecord(null)}
-        title={
-        viewRecord ? `Grievance ${viewRecord.refNo}` : 'Grievance Details'
-        }
+        title={viewRecord ? viewRecord.nameOfComplainant : 'Grievance Details'}
         subtitle={
         viewRecord ?
-        `${viewRecord.natureOfConcern} • ${viewRecord.dateReceived}` :
+        `${viewRecord.dateOfIntake} — ${viewRecord.modeOfFiling}` :
         ''
         }
         sections={viewRecord ? getViewSections(viewRecord) : []} />
       
+
       <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <SearchIcon
@@ -1111,22 +2484,21 @@ function GifList({
         </div>
       </div>
 
-      {/* Desktop Table */}
       <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-100 bg-gradient-to-r from-primary-50/40 to-secondary-50/30">
               <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Ref No.
+                Date of Intake
               </th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Date Received
+                Complainant
               </th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Nature of Concern
+                Mode
               </th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Severity
+                Level
               </th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
                 Status
@@ -1142,19 +2514,17 @@ function GifList({
               key={r.id}
               className="border-b border-gray-50 hover:bg-gradient-to-r hover:from-primary-50/30 hover:to-transparent hover:shadow-sm transition-all duration-200 cursor-pointer group">
               
-                <td className="px-4 py-3.5 font-mono text-xs text-gray-500 group-hover:text-gray-700 transition-colors relative">
+                <td className="px-4 py-3.5 text-gray-700 relative">
                   <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-0 group-hover:h-8 bg-primary rounded-r-full transition-all duration-200" />
-                  {r.refNo}
+                  {r.dateOfIntake}
                 </td>
-                <td className="px-4 py-3.5 text-gray-700">{r.dateReceived}</td>
-                <td className="px-4 py-3.5 text-gray-800 font-medium group-hover:text-primary transition-colors">
-                  {r.natureOfConcern.replace(/^Type [A-E] - /, '')}
+                <td className="px-4 py-3.5 text-gray-800 font-medium group-hover:text-primary transition-colors max-w-[200px] truncate">
+                  {r.nameOfComplainant}
                 </td>
+                <td className="px-4 py-3.5 text-gray-600">{r.modeOfFiling}</td>
+                <td className="px-4 py-3.5 text-gray-600">{r.intakeLevel}</td>
                 <td className="px-4 py-3.5">
-                  <SeverityBadge value={r.severity} />
-                </td>
-                <td className="px-4 py-3.5">
-                  <StatusBadge value={r.status} />
+                  <StatusBadge value={getOverallStatus(r)} />
                 </td>
                 <td className="px-4 py-3.5">
                   <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
@@ -1183,7 +2553,6 @@ function GifList({
         </table>
       </div>
 
-      {/* Mobile Cards */}
       <div className="md:hidden p-3 space-y-3">
         {paginated.map((r) =>
         <div
@@ -1192,15 +2561,16 @@ function GifList({
           
             <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary/0 group-hover:bg-primary rounded-l-xl transition-all duration-200" />
             <div className="flex items-center justify-between">
-              <span className="font-mono text-xs text-gray-500">{r.refNo}</span>
-              <span className="text-xs text-gray-400">{r.dateReceived}</span>
+              <span className="font-medium text-gray-900 text-sm group-hover:text-primary transition-colors truncate max-w-[200px]">
+                {r.nameOfComplainant}
+              </span>
+              <span className="text-xs text-gray-400">{r.dateOfIntake}</span>
             </div>
-            <p className="font-medium text-gray-900 text-sm group-hover:text-primary transition-colors">
-              {r.natureOfConcern.replace(/^Type [A-E] - /, '')}
-            </p>
-            <div className="flex items-center gap-2">
-              <SeverityBadge value={r.severity} />
-              <StatusBadge value={r.status} />
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-gray-500">{r.modeOfFiling}</span>
+              <span className="text-xs text-gray-400">•</span>
+              <span className="text-xs text-gray-500">{r.intakeLevel}</span>
+              <StatusBadge value={getOverallStatus(r)} />
             </div>
             <div className="flex items-center justify-end pt-1">
               <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
@@ -1221,7 +2591,6 @@ function GifList({
         }
       </div>
 
-      {/* Pagination */}
       <div className="p-4 border-t border-gray-100 flex items-center justify-between">
         <p className="text-xs text-gray-500">
           Showing {paginated.length} of {records.length} records
