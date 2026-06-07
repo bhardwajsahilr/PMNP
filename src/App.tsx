@@ -4,7 +4,6 @@ import { AppProvider } from './context/AppContext';
 import { LoginPage } from './pages/LoginPage';
 import { BarangaySelectionPage } from './pages/BarangaySelectionPage';
 import { DashboardLayout } from './pages/DashboardLayout';
-import { DashboardHome } from './pages/DashboardHome';
 import { AdministrationPage } from './pages/AdministrationPage';
 import { LnapPage } from './pages/LnapPage';
 import { LncStatusPage } from './pages/LncStatusPage';
@@ -18,16 +17,28 @@ import { ProcIctEquipmentPage } from './pages/ProcIctEquipmentPage';
 import { ProcNutritionCommoditiesPage } from './pages/ProcNutritionCommoditiesPage';
 import { ProcPhcSmallEquipPage } from './pages/ProcPhcSmallEquipPage';
 import { SbcTargetsPage } from './pages/SbcTargetsPage';
+import { PbgExternalVerificationPage } from './pages/PbgExternalVerificationPage';
+import { CapacityNphcTargetsPage } from './pages/CapacityNphcTargetsPage';
+import { FinanceLguWfpPage } from './pages/FinanceLguWfpPage';
+import { MeRfTargetsPage } from './pages/MeRfTargetsPage';
 export function App() {
   return (
     <AppProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/select-barangay" element={<BarangaySelectionPage />} />
           <Route path="/dashboard" element={<DashboardLayout />}>
-            <Route index element={<DashboardHome />} />
+            <Route
+              index
+              element={
+              <Navigate
+                to="/dashboard/administration/pmnp-meetings"
+                replace />
+
+              } />
+            
             {/* Administration */}
             <Route
               path="administration"
@@ -50,7 +61,7 @@ export function App() {
             {/* LNAP */}
             <Route
               path="lnap"
-              element={<Navigate to="/dashboard/lnap/mnap-status" replace />} />
+              element={<Navigate to="/dashboard/lnap/status" replace />} />
             
             <Route
               path="lnap/mnap-status"
@@ -120,12 +131,7 @@ export function App() {
             
             <Route
               path="capacity-building/nphc-targets"
-              element={
-              <PlaceholderPage
-                title="NPHC Targets"
-                subtitle="Track NPHC target metrics" />
-
-              } />
+              element={<CapacityNphcTargetsPage />} />
             
             <Route
               path="capacity-building/capacity-mapping"
@@ -151,15 +157,7 @@ export function App() {
               path="finance"
               element={<Navigate to="/dashboard/finance/lgu-wfp" replace />} />
             
-            <Route
-              path="finance/lgu-wfp"
-              element={
-              <PlaceholderPage
-                title="LGU - WFP"
-                subtitle="LGU Work and Financial Plan" />
-
-              } />
-            
+            <Route path="finance/lgu-wfp" element={<FinanceLguWfpPage />} />
             <Route
               path="finance/lgu-fur"
               element={
@@ -258,15 +256,7 @@ export function App() {
 
               } />
             
-            <Route
-              path="me/rf-targets"
-              element={
-              <PlaceholderPage
-                title="Result Framework - Targets"
-                subtitle="Track result framework targets" />
-
-              } />
-            
+            <Route path="me/rf-targets" element={<MeRfTargetsPage />} />
             <Route
               path="me/rf-baseline"
               element={
@@ -361,12 +351,7 @@ export function App() {
             
             <Route
               path="pbg/external-verification-report"
-              element={
-              <PlaceholderPage
-                title="External Verification Report"
-                subtitle="External verification report management" />
-
-              } />
+              element={<PbgExternalVerificationPage />} />
             
             <Route
               path="pbg/doc-repo"

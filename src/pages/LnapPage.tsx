@@ -335,7 +335,7 @@ const EMPTY_FORM = {
   sixPlusThreeDoc: null as string | null
 };
 export function LnapPage() {
-  const [activeTab, setActiveTab] = useState<Tab>('form');
+  const [activeTab, setActiveTab] = useState<Tab>('list');
   const [records, setRecords] = useState<LnapRecord[]>([]);
   const [form, setForm] = useState(EMPTY_FORM);
   const [formStatus, setFormStatus] = useState<RecordStatus>('Draft');
@@ -779,47 +779,9 @@ export function LnapPage() {
 
         {/* Form tab */}
         {activeTab === 'form' &&
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Mobile summary accordion */}
-            <div className="lg:hidden">
-              <button
-              type="button"
-              onClick={() => setSummaryOpen((s) => !s)}
-              className="w-full flex items-center justify-between bg-white border border-gray-100 rounded-2xl shadow-sm p-4">
-              
-                <span className="font-medium text-gray-900">Live Summary</span>
-                <ChevronDownIcon
-                className={`w-5 h-5 text-gray-400 transition-transform ${summaryOpen ? 'rotate-180' : ''}`} />
-              
-              </button>
-              <AnimatePresence initial={false}>
-                {summaryOpen &&
-              <motion.div
-                initial={{
-                  height: 0,
-                  opacity: 0
-                }}
-                animate={{
-                  height: 'auto',
-                  opacity: 1
-                }}
-                exit={{
-                  height: 0,
-                  opacity: 0
-                }}
-                transition={{
-                  duration: 0.2
-                }}
-                className="overflow-hidden mt-3">
-                
-                    <SummaryContent />
-                  </motion.div>
-              }
-              </AnimatePresence>
-            </div>
-
+        <div className="space-y-6">
             {/* Form column */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="space-y-6">
               {/* 1. Reporting Period */}
               <SectionCard
               title="Reporting Period"
@@ -1137,64 +1099,9 @@ export function LnapPage() {
               headerBg="bg-yellow-50/60">
               
                 <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-medium text-gray-700">
-                      Auto-calculated score
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Set to 1 when all four gates above are "Yes".
-                    </p>
-                    <ul className="text-xs text-gray-500 mt-2 space-y-0.5">
-                      <li>
-                        6-point criteria:{' '}
-                        <span
-                        className={
-                        form.sixPointCriteria === 'Yes' ?
-                        'text-green-600 font-medium' :
-                        'text-gray-400'
-                        }>
-                        
-                          {form.sixPointCriteria || '—'}
-                        </span>
-                      </li>
-                      <li>
-                        SB Resolution:{' '}
-                        <span
-                        className={
-                        form.sbResolution === 'Yes' ?
-                        'text-green-600 font-medium' :
-                        'text-gray-400'
-                        }>
-                        
-                          {form.sbResolution || '—'}
-                        </span>
-                      </li>
-                      <li>
-                        AIP Inclusion:{' '}
-                        <span
-                        className={
-                        form.aipInclusion === 'Yes' ?
-                        'text-green-600 font-medium' :
-                        'text-gray-400'
-                        }>
-                        
-                          {form.aipInclusion || '—'}
-                        </span>
-                      </li>
-                      <li>
-                        BNC Reorganization:{' '}
-                        <span
-                        className={
-                        form.bncReorg === 'Yes' ?
-                        'text-green-600 font-medium' :
-                        'text-gray-400'
-                        }>
-                        
-                          {form.bncReorg || '—'}
-                        </span>
-                      </li>
-                    </ul>
-                  </div>
+                  <p className="text-sm font-medium text-gray-700">
+                    6+3 Criteria Score
+                  </p>
                   <SixPlusThreeBadge value={sixPlusThree} size="lg" />
                 </div>
                 <AnimatePresence initial={false}>
@@ -1255,13 +1162,6 @@ export function LnapPage() {
                     <SendIcon className="w-4 h-4 mr-2" /> Submit
                   </button>
                 </div>
-              </div>
-            </div>
-
-            {/* Desktop summary rail */}
-            <div className="hidden lg:block lg:col-span-1">
-              <div className="sticky top-24">
-                <SummaryContent />
               </div>
             </div>
           </div>

@@ -124,7 +124,7 @@ function StatusBadge({ value }: {value: string;}) {
 
 }
 export function ProcIctEquipmentPage() {
-  const [activeTab, setActiveTab] = useState<Tab>('form');
+  const [activeTab, setActiveTab] = useState<Tab>('list');
   const [searchQuery, setSearchQuery] = useState('');
   const [records, setRecords] = useState<IctRecord[]>(loadRecords);
   const handleAdd = useCallback(

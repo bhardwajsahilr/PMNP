@@ -20,11 +20,21 @@ interface AppContextType {
   } | null)
   => void;
 }
+const DEFAULT_BARANGAY: Barangay = {
+  region: 'Region I',
+  province: 'Ilocos Norte',
+  municipality: 'Laoag City',
+  barangay: 'Barangay 1'
+};
+const DEFAULT_USER = {
+  name: 'PMNP User',
+  email: 'user@pmnp.gov.ph'
+};
 const AppContext = createContext<AppContextType | undefined>(undefined);
 export function AppProvider({ children }: {children: ReactNode;}) {
   const [selectedBarangay, setSelectedBarangayState] =
   useState<Barangay | null>(() =>
-  storageGet<Barangay | null>(KEYS.BARANGAY, null)
+  storageGet<Barangay | null>(KEYS.BARANGAY, DEFAULT_BARANGAY)
   );
   const [user, setUserState] = useState<{
     name: string;
@@ -33,7 +43,7 @@ export function AppProvider({ children }: {children: ReactNode;}) {
   storageGet<{
     name: string;
     email: string;
-  } | null>(KEYS.USER, null)
+  } | null>(KEYS.USER, DEFAULT_USER)
   );
   const setSelectedBarangay = useCallback((b: Barangay | null) => {
     setSelectedBarangayState(b);

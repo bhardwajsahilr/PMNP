@@ -14,7 +14,7 @@ export function PlaceholderPage({
   formLabel = 'New Entry',
   listLabel = 'Records'
 }: PlaceholderPageProps) {
-  const [activeTab, setActiveTab] = useState<Tab>('form');
+  const [activeTab, setActiveTab] = useState<Tab>('list');
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">

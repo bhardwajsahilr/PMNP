@@ -355,7 +355,7 @@ function PercentInput({
 }
 /* ---------------- Page ---------------- */
 export function SbcTargetsPage() {
-  const [activeTab, setActiveTab] = useState<Tab>('form');
+  const [activeTab, setActiveTab] = useState<Tab>('list');
   const [records, setRecords] = useState<SbcRecord[]>([]);
   const [reportDate, setReportDate] = useState<string>('');
   const [targets, setTargets] = useState<Targets>(() => emptyTargets());
@@ -673,7 +673,7 @@ export function SbcTargetsPage() {
       sections.push({
         title: sub.title,
         fields: sub.fields.map((f) => ({
-          label: `${f.meta} — ${f.label}`,
+          label: f.label,
           value: viewing.targets[f.key] ? `${viewing.targets[f.key]}%` : ''
         }))
       });
@@ -771,47 +771,9 @@ export function SbcTargetsPage() {
 
         {/* Form tab */}
         {activeTab === 'form' &&
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Mobile summary */}
-            <div className="lg:hidden">
-              <button
-              type="button"
-              onClick={() => setSummaryOpen((s) => !s)}
-              className="w-full flex items-center justify-between bg-white border border-gray-100 rounded-2xl shadow-sm p-4">
-              
-                <span className="font-medium text-gray-900">Live Summary</span>
-                <ChevronDownIcon
-                className={`w-5 h-5 text-gray-400 transition-transform ${summaryOpen ? 'rotate-180' : ''}`} />
-              
-              </button>
-              <AnimatePresence initial={false}>
-                {summaryOpen &&
-              <motion.div
-                initial={{
-                  height: 0,
-                  opacity: 0
-                }}
-                animate={{
-                  height: 'auto',
-                  opacity: 1
-                }}
-                exit={{
-                  height: 0,
-                  opacity: 0
-                }}
-                transition={{
-                  duration: 0.2
-                }}
-                className="overflow-hidden mt-3">
-                
-                    <SummaryContent />
-                  </motion.div>
-              }
-              </AnimatePresence>
-            </div>
-
+        <div className="space-y-6">
             {/* Form column */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="space-y-6">
               {/* Report Date card */}
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
                 <div className="bg-blue-50/60 px-6 py-4 border-b border-gray-100 flex items-center rounded-t-2xl">
@@ -905,19 +867,20 @@ export function SbcTargetsPage() {
                       }}
                       className="overflow-hidden">
                       
-                          <div className="p-6 space-y-5">
+                          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                             {sub.fields.map((f) => {
                           const val = targets[f.key] ?? '';
                           const hasValue = val !== '';
                           return (
-                            <div key={f.key} id={`field-${f.key}`}>
+                            <div
+                              key={f.key}
+                              id={`field-${f.key}`}
+                              className="flex flex-col">
+                              
                                   <label className="block text-sm font-medium text-gray-700 mb-1.5 leading-snug">
                                     {f.label}
                                     <RequiredMark />
                                   </label>
-                                  <p className="text-xs text-gray-400 mb-2 font-mono">
-                                    {f.meta}
-                                  </p>
                                   <PercentInput
                                 id={`input-${f.key}`}
                                 value={val}
@@ -968,13 +931,6 @@ export function SbcTargetsPage() {
                     <SendIcon className="w-4 h-4 mr-2" /> Submit
                   </button>
                 </div>
-              </div>
-            </div>
-
-            {/* Desktop summary rail */}
-            <div className="hidden lg:block lg:col-span-1">
-              <div className="sticky top-24">
-                <SummaryContent />
               </div>
             </div>
           </div>

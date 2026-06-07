@@ -127,7 +127,7 @@ function StatusBadge({ value }: {value: string;}) {
 
 }
 export function ProcEquipmentSupplyPage() {
-  const [activeTab, setActiveTab] = useState<Tab>('form');
+  const [activeTab, setActiveTab] = useState<Tab>('list');
   const [searchQuery, setSearchQuery] = useState('');
   const [records, setRecords] = useState<EquipRecord[]>(loadRecords);
   const handleAdd = useCallback(

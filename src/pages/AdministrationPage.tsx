@@ -410,7 +410,7 @@ function FileUploadField({
 
 }
 export function AdministrationPage() {
-  const [activeTab, setActiveTab] = useState<Tab>('form');
+  const [activeTab, setActiveTab] = useState<Tab>('list');
   const [searchQuery, setSearchQuery] = useState('');
   const [records, setRecords] = useState<Meeting[]>(loadRecords);
   const handleAdd = useCallback(

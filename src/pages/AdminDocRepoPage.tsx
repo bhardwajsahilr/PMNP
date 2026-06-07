@@ -69,7 +69,7 @@ function getTodayString(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 export function AdminDocRepoPage() {
-  const [activeTab, setActiveTab] = useState<Tab>('form');
+  const [activeTab, setActiveTab] = useState<Tab>('list');
   const [searchQuery, setSearchQuery] = useState('');
   const [records, setRecords] = useState<DocRecord[]>(loadDocs);
   const handleAdd = useCallback(

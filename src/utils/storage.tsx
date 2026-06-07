@@ -13,7 +13,12 @@ const KEYS = {
   PROC_ICT_EQUIP: 'pmnp_proc_ict_equip',
   PROC_NUTRITION: 'pmnp_proc_nutrition',
   PROC_PHC_EQUIP: 'pmnp_proc_phc_equip',
-  SBC_TARGETS: 'pmnp_sbc_targets'
+  SBC_TARGETS: 'pmnp_sbc_targets',
+  PBG_EVR: 'pmnp_pbg_evr',
+  CB_NPHC: 'pmnp_cb_nphc',
+  LGU_WFP: 'pmnp_lgu_wfp',
+  ME_RF_TARGETS: 'pmnp_me_rf_targets',
+  ME_RF_DRAFT: 'pmnp_me_rf_draft'
 } as const;
 export function storageGet<T>(key: string, fallback: T): T {
   try {

@@ -157,7 +157,7 @@ function StatusBadge({ value }: {value: string;}) {
 
 }
 export function ProcAnthropometryPage() {
-  const [activeTab, setActiveTab] = useState<Tab>('form');
+  const [activeTab, setActiveTab] = useState<Tab>('list');
   const [searchQuery, setSearchQuery] = useState('');
   const [records, setRecords] = useState<AnthroRecord[]>(loadRecords);
   const handleAdd = useCallback(

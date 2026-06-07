@@ -224,7 +224,7 @@ function RatingBadge({ value }: {value: string;}) {
 
 }
 export function FeedbackFormPage() {
-  const [activeTab, setActiveTab] = useState<Tab>('form');
+  const [activeTab, setActiveTab] = useState<Tab>('list');
   const [searchQuery, setSearchQuery] = useState('');
   const [records, setRecords] = useState<PffRecord[]>(loadPff);
   const [viewRecord, setViewRecord] = useState<PffRecord | null>(null);

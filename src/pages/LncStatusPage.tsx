@@ -307,7 +307,7 @@ function ScoreBadge({ score }: {score: number;}) {
 
 }
 export function LncStatusPage() {
-  const [activeTab, setActiveTab] = useState<Tab>('form');
+  const [activeTab, setActiveTab] = useState<Tab>('list');
   const [searchQuery, setSearchQuery] = useState('');
   const [records, setRecords] = useState<LncRecord[]>(loadLnc);
   const handleAdd = useCallback(

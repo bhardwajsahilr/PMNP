@@ -517,7 +517,7 @@ function CardHeader({
 
 }
 export function GrievanceIntakePage() {
-  const [activeTab, setActiveTab] = useState<Tab>('form');
+  const [activeTab, setActiveTab] = useState<Tab>('list');
   const [searchQuery, setSearchQuery] = useState('');
   const [records, setRecords] = useState<Grievance[]>(loadRecords);
   const [headerStatus, setHeaderStatus] = useState<string>('Draft');

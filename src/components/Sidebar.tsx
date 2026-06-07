@@ -189,23 +189,23 @@ const EXPANDABLE_MODULES: ExpandableModule[] = [
   basePath: '/dashboard/lnap',
   subItems: [
   {
-    label: 'MNAP Status',
-    path: '/dashboard/lnap/mnap-status',
-    icon: ClipboardCheckIcon
-  },
-  {
     label: 'BNAP Status',
     path: '/dashboard/lnap/status',
     icon: ClipboardCheckIcon
   },
   {
-    label: 'MNC Status',
-    path: '/dashboard/lnap/mnc-status',
+    label: 'BNC Status',
+    path: '/dashboard/lnap/bnc-status',
     icon: UsersIcon
   },
   {
-    label: 'BNC Status',
-    path: '/dashboard/lnap/bnc-status',
+    label: 'MNAP Status',
+    path: '/dashboard/lnap/mnap-status',
+    icon: ClipboardCheckIcon
+  },
+  {
+    label: 'MNC Status',
+    path: '/dashboard/lnap/mnc-status',
     icon: UsersIcon
   }]
 
@@ -445,29 +445,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-3 mb-2">
             Menu
           </p>
-
-          {/* Dashboard */}
-          <NavLink
-            to="/dashboard"
-            end
-            onClick={onClose}
-            className={({ isActive }) =>
-            `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${isActive ? 'bg-primary/10 text-primary' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`
-            }>
-            
-            {({ isActive }) =>
-            <>
-                <HomeIcon size={18} strokeWidth={isActive ? 2.5 : 2} />
-                <span>Dashboard</span>
-                {isActive &&
-              <motion.div
-                layoutId="nav-indicator"
-                className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />
-
-              }
-              </>
-            }
-          </NavLink>
 
           {/* Expandable Modules (alphabetical) */}
           {EXPANDABLE_MODULES.map((mod) => {
