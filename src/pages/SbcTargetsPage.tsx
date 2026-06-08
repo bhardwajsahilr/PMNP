@@ -47,12 +47,6 @@ const SUBSECTIONS: Subsection[] = [
   headerBg: 'bg-blue-50/60',
   fields: [
   {
-    key: 't_mo1',
-    meta: 'SBC_RF_Targets #1 MO1',
-    label:
-    'Target % of households in participating barangays with convergence of priority nutrition-specific and nutrition sensitive interventions'
-  },
-  {
     key: 't_io11',
     meta: 'SBC_RF_Targets #2 IO1.1',
     label:
@@ -128,20 +122,13 @@ const SUBSECTIONS: Subsection[] = [
     key: 't_io2a2',
     meta: 'SBC_RF_Targets #11 IO2A.2',
     label:
-    'Target % of municipalities with evidence-based multi-sectoral LNAPs that have SBC components and approved budget for 2025',
-    helper: 'Verify if this indicator is still required.'
+    'Target % of municipalities with evidence-based multi-sectoral LNAPs that have SBC components and approved budget for 2026'
   },
   {
     key: 't_io2a3',
     meta: 'SBC_RF_Targets #12 IO2A.3',
     label:
     'Target % of municipalities with evidence-based multi-sectoral LNAPs that have SBC components and allocated and expended budget for 2026'
-  },
-  {
-    key: 't_io2a4',
-    meta: 'SBC_RF_Targets #13 IO2A.4',
-    label:
-    'Target % of municipalities with evidence-based multi-sectoral LNAPs that have SBC components and allocated and expended budget for 2025'
   },
   {
     key: 't_io2b',
@@ -191,7 +178,7 @@ const SUBSECTIONS: Subsection[] = [
 }];
 
 const ALL_FIELDS: TargetField[] = SUBSECTIONS.flatMap((s) => s.fields);
-const TOTAL_TARGETS = ALL_FIELDS.length; // 19
+const TOTAL_TARGETS = ALL_FIELDS.length; // 17
 const PAGE_SIZE = 8;
 type Targets = Record<string, string>;
 interface SbcRecord {
