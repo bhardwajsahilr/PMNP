@@ -118,14 +118,29 @@ const EXPANDABLE_MODULES: ExpandableModule[] = [
   basePath: '/dashboard/esmf',
   subItems: [
   {
+    label: 'PMNP Feedback Form',
+    path: '/dashboard/esmf/feedback',
+    icon: MessageSquareIcon
+  },
+  {
     label: 'Grievance Intake',
     path: '/dashboard/esmf/grievance',
     icon: AlertTriangleIcon
   },
   {
-    label: 'Feedback Form',
-    path: '/dashboard/esmf/feedback',
-    icon: MessageSquareIcon
+    label: 'PPAs for ESSC & ESMP',
+    path: '/dashboard/esmf/ppas-essc-esmp',
+    icon: ClipboardListIcon
+  },
+  {
+    label: 'Installed GRMs',
+    path: '/dashboard/esmf/installed-grms',
+    icon: ClipboardCheckIcon
+  },
+  {
+    label: 'Approved CPs and CNOs',
+    path: '/dashboard/esmf/approved-cps-cnos',
+    icon: AwardIcon
   }]
 
 },
@@ -494,18 +509,21 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                         to={sub.path}
                         onClick={onClose}
                         className={({ isActive }) =>
-                        `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all ${isActive ? 'bg-primary/10 text-primary font-medium' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'}`
+                        `flex items-start gap-2.5 px-3 py-2 rounded-lg text-sm transition-all ${isActive ? 'bg-primary/10 text-primary font-medium' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'}`
                         }>
                         
                             {({ isActive }) =>
                         <>
                                 <sub.icon
                             size={15}
-                            strokeWidth={isActive ? 2.5 : 2} />
+                            strokeWidth={isActive ? 2.5 : 2}
+                            className="shrink-0 mt-0.5" />
                           
-                                <span className="truncate">{sub.label}</span>
+                                <span className="leading-snug">
+                                  {sub.label}
+                                </span>
                                 {isActive &&
-                          <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                          <div className="ml-auto mt-1.5 w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
                           }
                               </>
                         }

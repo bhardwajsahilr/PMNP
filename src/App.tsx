@@ -96,10 +96,37 @@ export function App() {
             {/* ESMF */}
             <Route
               path="esmf"
-              element={<Navigate to="/dashboard/esmf/grievance" replace />} />
+              element={<Navigate to="/dashboard/esmf/feedback" replace />} />
             
             <Route path="esmf/grievance" element={<GrievanceIntakePage />} />
             <Route path="esmf/feedback" element={<FeedbackFormPage />} />
+            <Route
+              path="esmf/ppas-essc-esmp"
+              element={
+              <PlaceholderPage
+                title="PPAs for ESSC & ESMP"
+                subtitle="Projects, Programs & Activities for ESSC and ESMP" />
+
+              } />
+            
+            <Route
+              path="esmf/installed-grms"
+              element={
+              <PlaceholderPage
+                title="Installed GRMs"
+                subtitle="Installed Grievance Redress Mechanisms" />
+
+              } />
+            
+            <Route
+              path="esmf/approved-cps-cnos"
+              element={
+              <PlaceholderPage
+                title="Approved CPs and CNOs"
+                subtitle="Approved Compliance Plans and Certificates of Non-Objection" />
+
+              } />
+            
 
             {/* Capacity Building */}
             <Route

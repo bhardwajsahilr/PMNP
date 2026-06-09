@@ -1,297 +1,534 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   SearchIcon,
-  PlusIcon,
   EyeIcon,
-  Trash2Icon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  CalendarIcon,
   UserIcon,
   MessageSquareIcon,
-  CheckCircleIcon,
-  LinkIcon,
-  PaperclipIcon,
-  StarIcon,
-  WrenchIcon,
-  XIcon } from
+  CircleCheckBigIcon,
+  RotateCcwIcon,
+  SendIcon,
+  LockIcon } from
 'lucide-react';
 import { storageGet, storageSet, KEYS } from '../utils/storage';
+import { useAppContext } from '../context/AppContext';
 import { ViewModal } from '../components/ViewModal';
 import type { SectionDef } from '../components/ViewModal';
 type Tab = 'form' | 'list';
-const FEEDBACK_TYPES = ['Suggestion', 'Compliment', 'Concern', 'Inquiry'];
+const PAGE_SIZE = 8;
+const IP_OPTIONS = ['Indigenous People (IP)', 'Non-IP'];
+const GENDER_OPTIONS = ['Male', 'Female'];
 const DESIGNATION_OPTIONS = [
-'Community Member',
-'Barangay Official',
-'Health Worker',
-'NGO Representative',
-'Government Staff',
+'Project Beneficiary',
+'Barangay Health Worker',
+'Barangay Officials / Staff',
+'Member of any Indigenous Group',
+'Provincial Staff',
+'Regional Staff',
+'National Staff',
+'Municipal Staff',
+'Other Participating Agencies',
 'Others'];
 
-const RATING_OPTIONS = [
-{
-  value: '1',
-  label: '1 - Very Poor'
-},
-{
-  value: '2',
-  label: '2 - Poor'
-},
-{
-  value: '3',
-  label: '3 - Average'
-},
-{
-  value: '4',
-  label: '4 - Good'
-},
-{
-  value: '5',
-  label: '5 - Excellent'
-}];
+const FEEDBACK_TYPES = [
+'Complaint',
+'Recommendation',
+'Inquiry',
+'Compliment / Positive Feedback',
+'General Feedback'];
 
-const STATUS_OPTIONS = ['Received', 'Under Review', 'Addressed', 'Closed'];
 interface PffRecord {
   id: number;
-  refNo: string;
-  dateFeedback: string;
-  province: string;
-  municipality: string;
-  barangay: string;
-  isAnonymous: string;
-  respondentName: string;
+  grievanceId: string;
+  dateOfFiling: string;
+  anonymous: boolean;
+  firstName: string;
+  middleInitial: string;
+  surname: string;
   contactNumber: string;
+  ipStatus: string;
+  gender: string;
+  email: string;
   designation: string;
+  address: string;
   feedbackType: string;
-  subject: string;
-  description: string;
-  rating: string;
-  status: string;
-  responseDetails: string;
-  dateAddressed: string;
-  responsiblePerson: string;
-  documentLink: string;
-  remarks: string;
+  dateOfIncident: string;
+  timeOfIncident: string;
+  locationOfIncident: string;
+  specificDetails: string;
+  outcomeExpected: boolean;
+  outcomeExpectedDetails: string;
+  recommendationDetails: string;
 }
-const SEED_PFF: PffRecord[] = [
+const EMPTY_FORM = {
+  dateOfFiling: '',
+  anonymous: false,
+  firstName: '',
+  middleInitial: '',
+  surname: '',
+  contactNumber: '',
+  ipStatus: '',
+  gender: '',
+  email: '',
+  designation: '',
+  address: '',
+  feedbackType: '',
+  dateOfIncident: '',
+  timeOfIncident: '',
+  locationOfIncident: '',
+  specificDetails: '',
+  outcomeExpected: false,
+  outcomeExpectedDetails: '',
+  recommendationDetails: ''
+};
+function genGrievanceId(): string {
+  const year = new Date().getFullYear();
+  const rand = Math.floor(100000 + Math.random() * 900000);
+  return `PFF-${year}-${rand}`;
+}
+function loadRecords(): PffRecord[] {
+  return storageGet<PffRecord[]>(KEYS.PFF, SEED);
+}
+function saveRecords(records: PffRecord[]): void {
+  storageSet(KEYS.PFF, records);
+}
+const SEED: PffRecord[] = [
 {
   id: 1,
-  refNo: 'PFF-001',
-  dateFeedback: '2026-03-14',
-  province: 'Laguna',
-  municipality: 'Santa Rosa',
-  barangay: 'Balibago',
-  isAnonymous: 'No',
-  respondentName: 'Elena Cruz',
-  contactNumber: '09171234567',
-  designation: 'Community Member',
-  feedbackType: 'Compliment',
-  subject: 'Excellent Feeding Program',
-  description:
-  'The supplementary feeding program has greatly improved the nutrition status of children in our barangay.',
-  rating: '5',
-  status: 'Addressed',
-  responseDetails:
-  'Acknowledged and shared with the team as positive feedback.',
-  dateAddressed: '2026-03-16',
-  responsiblePerson: 'Maria Santos',
-  documentLink: '',
-  remarks: ''
+  grievanceId: 'PFF-2026-204815',
+  dateOfFiling: '2026-04-02',
+  anonymous: false,
+  firstName: 'Maria',
+  middleInitial: 'L',
+  surname: 'Santos',
+  contactNumber: '+63 917 555 1234',
+  ipStatus: 'Non-IP',
+  gender: 'Female',
+  email: 'maria.santos@example.com',
+  designation: 'Barangay Health Worker',
+  address: 'Brgy. 5, Laoag City, Ilocos Norte',
+  feedbackType: 'Recommendation',
+  dateOfIncident: '',
+  timeOfIncident: '',
+  locationOfIncident: '',
+  specificDetails:
+  'Suggest scheduling weighing sessions earlier in the morning to improve attendance among working parents.',
+  outcomeExpected: true,
+  outcomeExpectedDetails:
+  'Adjust the monthly weighing schedule to 7:00–9:00 AM.',
+  recommendationDetails:
+  'Earlier sessions would greatly help working caregivers participate.'
 },
 {
   id: 2,
-  refNo: 'PFF-002',
-  dateFeedback: '2026-03-10',
-  province: 'Batangas',
-  municipality: 'Lipa',
-  barangay: 'Sabang',
-  isAnonymous: 'Yes',
-  respondentName: '',
+  grievanceId: 'PFF-2026-118702',
+  dateOfFiling: '2026-05-18',
+  anonymous: true,
+  firstName: '',
+  middleInitial: '',
+  surname: '',
   contactNumber: '',
-  designation: 'Health Worker',
-  feedbackType: 'Suggestion',
-  subject: 'Schedule Adjustment Request',
-  description:
-  'Suggest moving nutrition sessions to afternoon to accommodate working parents.',
-  rating: '3',
-  status: 'Under Review',
-  responseDetails: '',
-  dateAddressed: '',
-  responsiblePerson: 'Juan Dela Cruz',
-  documentLink: '',
-  remarks: 'Forwarded to scheduling committee'
-},
-{
-  id: 3,
-  refNo: 'PFF-003',
-  dateFeedback: '2026-03-05',
-  province: 'Quezon',
-  municipality: 'Lucena',
-  barangay: 'Ibabang Dupay',
-  isAnonymous: 'No',
-  respondentName: 'Pedro Ramos',
-  contactNumber: '09281234567',
-  designation: 'Barangay Official',
-  feedbackType: 'Concern',
-  subject: 'Insufficient Supplies',
-  description:
-  'The nutrition supplies delivered last month were insufficient for the number of beneficiaries.',
-  rating: '2',
-  status: 'Received',
-  responseDetails: '',
-  dateAddressed: '',
-  responsiblePerson: '',
-  documentLink: '',
-  remarks: ''
-},
-{
-  id: 4,
-  refNo: 'PFF-004',
-  dateFeedback: '2026-02-28',
-  province: 'Laguna',
-  municipality: 'Calamba',
-  barangay: 'Parian',
-  isAnonymous: 'No',
-  respondentName: 'Ana Reyes',
-  contactNumber: '09351234567',
-  designation: 'NGO Representative',
-  feedbackType: 'Inquiry',
-  subject: 'Partnership Opportunities',
-  description:
-  'Inquiring about potential partnership for nutrition education programs.',
-  rating: '4',
-  status: 'Closed',
-  responseDetails:
-  'Referred to partnership coordinator. Meeting scheduled for April.',
-  dateAddressed: '2026-03-02',
-  responsiblePerson: 'Dr. Liza Gomez',
-  documentLink: '',
-  remarks: ''
+  ipStatus: 'Non-IP',
+  gender: 'Male',
+  email: '',
+  designation: 'Project Beneficiary',
+  address: 'Brgy. 12, Batac City, Ilocos Norte',
+  feedbackType: 'Complaint',
+  dateOfIncident: '2026-05-15',
+  timeOfIncident: '10:30',
+  locationOfIncident: 'RHU, Batac City',
+  specificDetails:
+  'Long waiting times at the health center during distribution of micronutrient supplements.',
+  outcomeExpected: true,
+  outcomeExpectedDetails:
+  'Add a dedicated queue/window for supplement distribution.',
+  recommendationDetails: ''
 }];
 
-function loadPff(): PffRecord[] {
-  return storageGet<PffRecord[]>(KEYS.PFF, SEED_PFF);
+/* ---------------- Reusable ---------------- */
+function RequiredMark() {
+  return <span className="text-red-500 ml-0.5">*</span>;
 }
-function savePff(records: PffRecord[]) {
-  storageSet(KEYS.PFF, records);
+function InlineError({ msg }: {msg?: string;}) {
+  if (!msg) return null;
+  return <p className="mt-1.5 text-xs text-red-600">{msg}</p>;
 }
-function StatusBadge({ value }: {value: string;}) {
-  const colorMap: Record<string, string> = {
-    Received: 'bg-blue-50 text-blue-700',
-    'Under Review': 'bg-amber-50 text-amber-700',
-    Addressed: 'bg-green-50 text-green-700',
-    Closed: 'bg-gray-100 text-gray-600'
-  };
+function Helper({ text }: {text: string;}) {
+  return <p className="mt-1.5 text-xs text-gray-500">{text}</p>;
+}
+interface SectionCardProps {
+  title: string;
+  subtitle?: string;
+  icon: React.ReactNode;
+  iconBg: string;
+  headerBg: string;
+  children: React.ReactNode;
+}
+function SectionCard({
+  title,
+  subtitle,
+  icon,
+  iconBg,
+  headerBg,
+  children
+}: SectionCardProps) {
   return (
-    <span
-      className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium ${colorMap[value] || 'bg-gray-100 text-gray-600'}`}>
-      
-      {value}
-    </span>);
-
-}
-function FeedbackTypeBadge({ value }: {value: string;}) {
-  const colorMap: Record<string, string> = {
-    Suggestion: 'bg-blue-50 text-blue-700',
-    Compliment: 'bg-green-50 text-green-700',
-    Concern: 'bg-amber-50 text-amber-700',
-    Inquiry: 'bg-purple-50 text-purple-700'
-  };
-  return (
-    <span
-      className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium ${colorMap[value] || 'bg-gray-100 text-gray-600'}`}>
-      
-      {value}
-    </span>);
-
-}
-function RatingBadge({ value }: {value: string;}) {
-  const num = parseInt(value, 10) || 0;
-  let color = 'bg-red-50 text-red-700';
-  if (num >= 5) color = 'bg-green-50 text-green-700';else
-  if (num >= 4) color = 'bg-blue-50 text-blue-700';else
-  if (num >= 3) color = 'bg-amber-50 text-amber-700';else
-  if (num >= 2) color = 'bg-orange-50 text-orange-700';
-  return (
-    <span
-      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${color}`}>
-      
-      <StarIcon size={11} className="fill-current" />
-      {value}/5
-    </span>);
-
-}
-export function FeedbackFormPage() {
-  const [activeTab, setActiveTab] = useState<Tab>('list');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [records, setRecords] = useState<PffRecord[]>(loadPff);
-  const [viewRecord, setViewRecord] = useState<PffRecord | null>(null);
-  const handleAdd = useCallback(
-    (record: Omit<PffRecord, 'id' | 'refNo'>) => {
-      const nextId =
-      records.length > 0 ? Math.max(...records.map((r) => r.id)) + 1 : 1;
-      const newRecord: PffRecord = {
-        ...record,
-        id: nextId,
-        refNo: `PFF-${String(nextId).padStart(3, '0')}`
-      };
-      const updated = [newRecord, ...records];
-      setRecords(updated);
-      savePff(updated);
-      setActiveTab('list');
-    },
-    [records]
-  );
-  const handleDelete = useCallback(
-    (id: number) => {
-      const updated = records.filter((r) => r.id !== id);
-      setRecords(updated);
-      savePff(updated);
-    },
-    [records]
-  );
-  const filteredRecords = records.filter(
-    (r) =>
-    r.refNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    r.feedbackType.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    r.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    r.status.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-  return (
-    <div>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
+      <div
+        className={`${headerBg} px-6 py-4 border-b border-gray-100 flex items-center rounded-t-2xl`}>
+        
+        <div className={`${iconBg} p-2 rounded-lg mr-3`}>{icon}</div>
         <div>
-          <h1 className="text-xl font-bold text-gray-900">
-            Project Feedback Form
-          </h1>
-          <p className="text-sm text-gray-500">
-            Collect and manage stakeholder feedback
-          </p>
+          <h3 className="text-base font-semibold text-gray-900">{title}</h3>
+          {subtitle &&
+          <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>
+          }
         </div>
-        <div className="bg-gray-100 rounded-xl p-1 flex w-fit">
+      </div>
+      <div className="p-6">{children}</div>
+    </div>);
+
+}
+const INPUT_CLS =
+'w-full px-4 py-2.5 bg-white border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-300';
+interface FieldProps {
+  id?: string;
+  label: string;
+  required?: boolean;
+  error?: string;
+  helper?: string;
+  className?: string;
+  children: React.ReactNode;
+}
+function Field({
+  id,
+  label,
+  required,
+  error,
+  helper,
+  className,
+  children
+}: FieldProps) {
+  return (
+    <div id={id} className={className}>
+      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+        {label}
+        {required && <RequiredMark />}
+      </label>
+      {children}
+      {error ?
+      <InlineError msg={error} /> :
+      helper ?
+      <Helper text={helper} /> :
+      null}
+    </div>);
+
+}
+/* ---------------- Page ---------------- */
+export function FeedbackFormPage() {
+  const { selectedBarangay } = useAppContext();
+  const [activeTab, setActiveTab] = useState<Tab>('list');
+  const [records, setRecords] = useState<PffRecord[]>([]);
+  const [grievanceId, setGrievanceId] = useState<string>(() => genGrievanceId());
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [notification, setNotification] = useState('');
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [viewing, setViewing] = useState<PffRecord | null>(null);
+  useEffect(() => {
+    setRecords(loadRecords());
+  }, []);
+  useEffect(() => {
+    if (!notification) return;
+    const t = setTimeout(() => setNotification(''), 5000);
+    return () => clearTimeout(t);
+  }, [notification]);
+  const update = useCallback(
+    (key: keyof typeof EMPTY_FORM, val: string | boolean) => {
+      setForm((f) => ({
+        ...f,
+        [key]: val
+      }));
+      setErrors((e) => {
+        if (!e[key as string]) return e;
+        const next = {
+          ...e
+        };
+        delete next[key as string];
+        return next;
+      });
+    },
+    []
+  );
+  const validate = (): Record<string, string> => {
+    const e: Record<string, string> = {};
+    if (!form.dateOfFiling) e.dateOfFiling = 'Date of filing is required.';
+    if (!form.feedbackType) e.feedbackType = 'Feedback type is required.';
+    if (!form.specificDetails.trim())
+    e.specificDetails = 'Specific details are required.';
+    if (!form.anonymous) {
+      if (
+      form.email.trim() &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
+      {
+        e.email = 'Enter a valid email address.';
+      }
+      if (
+      form.contactNumber.trim() &&
+      !/^[+0-9()\-\s]{7,20}$/.test(form.contactNumber.trim()))
+      {
+        e.contactNumber = 'Enter a valid phone number.';
+      }
+    }
+    return e;
+  };
+  const handleReset = () => {
+    setForm(EMPTY_FORM);
+    setErrors({});
+    setGrievanceId(genGrievanceId());
+    setNotification('');
+  };
+  const scrollToError = (errs: Record<string, string>) => {
+    const firstKey = Object.keys(errs)[0];
+    if (!firstKey) return;
+    const el = document.getElementById(`field-${firstKey}`);
+    if (el)
+    el.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center'
+    });
+  };
+  const handleSubmit = () => {
+    const e = validate();
+    setErrors(e);
+    if (Object.keys(e).length > 0) {
+      scrollToError(e);
+      return;
+    }
+    const rec: PffRecord = {
+      id: Date.now(),
+      grievanceId,
+      ...form,
+      // wipe personal fields if anonymous
+      firstName: form.anonymous ? '' : form.firstName,
+      middleInitial: form.anonymous ? '' : form.middleInitial,
+      surname: form.anonymous ? '' : form.surname,
+      contactNumber: form.anonymous ? '' : form.contactNumber,
+      email: form.anonymous ? '' : form.email,
+      outcomeExpectedDetails: form.outcomeExpected ?
+      form.outcomeExpectedDetails :
+      ''
+    };
+    const next = [rec, ...records];
+    setRecords(next);
+    saveRecords(next);
+    setNotification(
+      `Your feedback has been submitted successfully. Your grievance ID is ${grievanceId}.`
+    );
+    handleReset();
+  };
+  /* ---------------- List view ---------------- */
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return records;
+    return records.filter(
+      (r) =>
+      r.grievanceId.toLowerCase().includes(q) ||
+      r.feedbackType.toLowerCase().includes(q) ||
+      r.dateOfFiling.toLowerCase().includes(q) ||
+      !r.anonymous &&
+      `${r.firstName} ${r.surname}`.toLowerCase().includes(q)
+    );
+  }, [records, search]);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const pageSafe = Math.min(page, totalPages);
+  const pageRecords = filtered.slice(
+    (pageSafe - 1) * PAGE_SIZE,
+    pageSafe * PAGE_SIZE
+  );
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
+  /* ---------------- View modal ---------------- */
+  const viewSections: SectionDef[] = viewing ?
+  [
+  {
+    title: 'I. Complainant / Sender Information',
+    fields: [
+    {
+      label: 'Grievance ID',
+      value: viewing.grievanceId
+    },
+    {
+      label: 'Date of Filing',
+      value: viewing.dateOfFiling
+    },
+    {
+      label: 'Anonymous',
+      value: viewing.anonymous ? 'Yes' : 'No'
+    },
+    ...(viewing.anonymous ?
+    [] :
+    [
+    {
+      label: 'Name',
+      value: [
+      viewing.firstName,
+      viewing.middleInitial,
+      viewing.surname].
+
+      filter(Boolean).
+      join(' ')
+    },
+    {
+      label: 'Contact Number',
+      value: viewing.contactNumber
+    },
+    {
+      label: 'Email Address',
+      value: viewing.email
+    }]),
+
+    {
+      label: 'IP / Non-IP',
+      value: viewing.ipStatus
+    },
+    {
+      label: 'Gender',
+      value: viewing.gender
+    },
+    {
+      label: 'Designation',
+      value: viewing.designation
+    },
+    {
+      label: 'Address',
+      value: viewing.address
+    }]
+
+  },
+  {
+    title: 'II. Feedback Details',
+    fields: [
+    {
+      label: 'Feedback Type',
+      value: viewing.feedbackType
+    },
+    {
+      label: 'Date of Incident',
+      value: viewing.dateOfIncident
+    },
+    {
+      label: 'Time of Incident',
+      value: viewing.timeOfIncident
+    },
+    {
+      label: 'Location of Incident',
+      value: viewing.locationOfIncident
+    },
+    {
+      label: 'Specific Details',
+      value: viewing.specificDetails
+    },
+    {
+      label: 'Outcome Expected',
+      value: viewing.outcomeExpected ? 'Yes' : 'No'
+    },
+    ...(viewing.outcomeExpected ?
+    [
+    {
+      label: 'Outcome Expected Details',
+      value: viewing.outcomeExpectedDetails
+    }] :
+
+    []),
+    {
+      label: 'Recommendation / Compliment Details',
+      value: viewing.recommendationDetails
+    }]
+
+  }] :
+
+  [];
+  const showPersonal = !form.anonymous;
+  /* ---------------- Render ---------------- */
+  return (
+    <div className="min-h-screen bg-gray-50/60">
+      <div className="max-w-5xl mx-auto p-4 lg:p-8 space-y-6">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center text-sm text-gray-500 mb-2">
+              <span>PMNP</span>
+              <ChevronRightIcon className="w-4 h-4 mx-1" />
+              <span>ESMF</span>
+              <ChevronRightIcon className="w-4 h-4 mx-1" />
+              <span className="font-medium text-gray-900">
+                PMNP Feedback Form
+              </span>
+            </div>
+            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
+              PMNP Feedback Form
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">
+              National, Regional, Municipality, Barangay · General population
+            </p>
+          </div>
+        </div>
+
+        {/* Inline banner */}
+        <AnimatePresence>
+          {notification &&
+          <motion.div
+            initial={{
+              opacity: 0,
+              y: -10
+            }}
+            animate={{
+              opacity: 1,
+              y: 0
+            }}
+            exit={{
+              opacity: 0,
+              y: -10
+            }}
+            transition={{
+              duration: 0.2
+            }}
+            className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-start">
+            
+              <CircleCheckBigIcon className="w-5 h-5 text-green-600 mr-3 shrink-0 mt-0.5" />
+              <span className="text-sm text-green-800 font-medium">
+                {notification}
+              </span>
+            </motion.div>
+          }
+        </AnimatePresence>
+
+        {/* Tabs */}
+        <div className="flex gap-1 bg-gray-200/60 p-1 rounded-xl w-fit">
           {[
           {
             key: 'form' as Tab,
-            label: 'New Feedback',
-            icon: PlusIcon
+            label: 'Feedback Form'
           },
           {
             key: 'list' as Tab,
-            label: 'PFF Records',
-            icon: SearchIcon
+            label: 'Records'
           }].
-          map((tab) =>
+          map((t) =>
           <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`relative flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab.key ? 'text-primary' : 'text-gray-500 hover:text-gray-700'}`}>
+            key={t.key}
+            onClick={() => setActiveTab(t.key)}
+            className={`relative px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === t.key ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
             
-              {activeTab === tab.key &&
+              {activeTab === t.key &&
             <motion.div
               layoutId="pff-tab"
-              className="absolute inset-0 bg-white rounded-lg shadow-sm"
+              className="absolute inset-0 bg-white shadow-sm rounded-lg"
               transition={{
                 type: 'spring',
                 stiffness: 400,
@@ -299,859 +536,562 @@ export function FeedbackFormPage() {
               }} />
 
             }
-              <span className="relative flex items-center gap-1.5">
-                <tab.icon size={15} />
-                <span className="hidden sm:inline">{tab.label}</span>
-                <span className="sm:hidden">
-                  {tab.key === 'form' ? 'Form' : 'Records'}
-                </span>
-              </span>
+              <span className="relative">{t.label}</span>
             </button>
           )}
         </div>
-      </div>
 
-      <AnimatePresence mode="wait">
-        {activeTab === 'form' ?
-        <motion.div
-          key="form"
-          initial={{
-            opacity: 0,
-            y: 10
-          }}
-          animate={{
-            opacity: 1,
-            y: 0
-          }}
-          exit={{
-            opacity: 0,
-            y: -10
-          }}
-          transition={{
-            duration: 0.2
-          }}>
-          
-            <PffForm onSubmit={handleAdd} />
-          </motion.div> :
-
-        <motion.div
-          key="list"
-          initial={{
-            opacity: 0,
-            y: 10
-          }}
-          animate={{
-            opacity: 1,
-            y: 0
-          }}
-          exit={{
-            opacity: 0,
-            y: -10
-          }}
-          transition={{
-            duration: 0.2
-          }}>
-          
-            <PffList
-            records={filteredRecords}
-            searchQuery={searchQuery}
-            onSearch={setSearchQuery}
-            onDelete={handleDelete} />
-          
-          </motion.div>
-        }
-      </AnimatePresence>
-    </div>);
-
-}
-function PffForm({
-  onSubmit
-
-
-}: {onSubmit: (r: Omit<PffRecord, 'id' | 'refNo'>) => void;}) {
-  const [form, setForm] = useState<Record<string, string>>({
-    dateFeedback: '',
-    province: '',
-    municipality: '',
-    barangay: '',
-    isAnonymous: 'No',
-    respondentName: '',
-    contactNumber: '',
-    designation: '',
-    feedbackType: '',
-    subject: '',
-    description: '',
-    rating: '',
-    status: '',
-    responseDetails: '',
-    dateAddressed: '',
-    responsiblePerson: '',
-    documentLink: '',
-    remarks: ''
-  });
-  const [success, setSuccess] = useState(false);
-  const update = (field: string, value: string) => {
-    setForm((f) => {
-      const next = {
-        ...f,
-        [field]: value
-      };
-      if (field === 'isAnonymous' && value === 'Yes') {
-        next.respondentName = '';
-        next.contactNumber = '';
-      }
-      if (field === 'status' && value !== 'Addressed' && value !== 'Closed') {
-        next.dateAddressed = '';
-      }
-      return next;
-    });
-  };
-  const handleSubmit = () => {
-    if (!form.dateFeedback || !form.feedbackType || !form.description) return;
-    onSubmit(form as unknown as Omit<PffRecord, 'id' | 'refNo'>);
-    const resetForm: Record<string, string> = {};
-    Object.keys(form).forEach((k) => {
-      resetForm[k] = k === 'isAnonymous' ? 'No' : '';
-    });
-    setForm(resetForm);
-    setSuccess(true);
-    setTimeout(() => setSuccess(false), 2000);
-  };
-  return (
-    <div className="space-y-5">
-      {success &&
-      <motion.div
-        initial={{
-          opacity: 0,
-          y: -10
-        }}
-        animate={{
-          opacity: 1,
-          y: 0
-        }}
-        className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 text-sm">
-        
-          <CheckCircleIcon size={18} />
-          Feedback record saved successfully!
-        </motion.div>
-      }
-
-      {/* 1. Basic Information */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="flex items-center gap-3 px-5 sm:px-6 pt-5 sm:pt-6 pb-3">
-          <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-            <CalendarIcon size={18} className="text-primary" />
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900">
-              Basic Information
-            </h3>
-            <p className="text-xs text-gray-400">Date and location details</p>
-          </div>
-        </div>
-        <div className="border-t border-primary/10 mx-5 sm:mx-6" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-5 sm:p-6 pt-4">
-          <FormField
-            label="Date of Feedback"
-            type="date"
-            value={form.dateFeedback}
-            onChange={(v) => update('dateFeedback', v)} />
-          
-          <FormField
-            label="PFF Reference No."
-            type="text"
-            placeholder="Auto-generated"
-            disabled />
-          
-          <FormField
-            label="Province"
-            type="text"
-            placeholder="Enter province"
-            value={form.province}
-            onChange={(v) => update('province', v)} />
-          
-          <FormField
-            label="Municipality / City"
-            type="text"
-            placeholder="Enter municipality"
-            value={form.municipality}
-            onChange={(v) => update('municipality', v)} />
-          
-          <FormField
-            label="Barangay"
-            type="text"
-            placeholder="Enter barangay"
-            value={form.barangay}
-            onChange={(v) => update('barangay', v)} />
-          
-        </div>
-      </div>
-
-      {/* 2. Respondent Information */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="flex items-center gap-3 px-5 sm:px-6 pt-5 sm:pt-6 pb-3">
-          <div className="w-9 h-9 rounded-lg bg-secondary/10 flex items-center justify-center">
-            <UserIcon size={18} className="text-secondary" />
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900">
-              Respondent Information
-            </h3>
-            <p className="text-xs text-gray-400">Identity and role details</p>
-          </div>
-        </div>
-        <div className="border-t border-secondary/10 mx-5 sm:mx-6" />
-        <div className="space-y-4 p-5 sm:p-6 pt-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">
-                Is Anonymous?
-              </label>
-              <select
-                value={form.isAnonymous}
-                onChange={(e) => update('isAnonymous', e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all bg-white">
+        {/* Form tab */}
+        {activeTab === 'form' &&
+        <div className="space-y-6">
+            {/* Section I */}
+            <SectionCard
+            title="I. Complainant / Sender Information"
+            icon={<UserIcon className="w-5 h-5 text-blue-600" />}
+            iconBg="bg-blue-100"
+            headerBg="bg-blue-50/60">
+            
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                <Field
+                label="Grievance ID"
+                helper="Auto-generated to track each grievance.">
                 
-                <option value="No">No</option>
-                <option value="Yes">Yes</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">
-                Designation / Role
-              </label>
-              <select
-                value={form.designation}
-                onChange={(e) => update('designation', e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all bg-white">
-                
-                <option value="">Select designation</option>
-                {DESIGNATION_OPTIONS.map((d) =>
-                <option key={d} value={d}>
-                    {d}
-                  </option>
-                )}
-              </select>
-            </div>
-          </div>
-          {form.isAnonymous === 'No' &&
-          <motion.div
-            initial={{
-              opacity: 0,
-              height: 0
-            }}
-            animate={{
-              opacity: 1,
-              height: 'auto'
-            }}
-            exit={{
-              opacity: 0,
-              height: 0
-            }}
-            className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            
-              <FormField
-              label="Name of Respondent"
-              type="text"
-              placeholder="Enter full name"
-              value={form.respondentName}
-              onChange={(v) => update('respondentName', v)} />
-            
-              <FormField
-              label="Contact Number"
-              type="text"
-              placeholder="09XX-XXX-XXXX"
-              value={form.contactNumber}
-              onChange={(v) => update('contactNumber', v)} />
-            
-            </motion.div>
-          }
-        </div>
-      </div>
-
-      {/* 3. Feedback Details */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="flex items-center gap-3 px-5 sm:px-6 pt-5 sm:pt-6 pb-3">
-          <div className="w-9 h-9 rounded-lg bg-purple-50 flex items-center justify-center">
-            <MessageSquareIcon size={18} className="text-purple-600" />
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900">
-              Feedback Details
-            </h3>
-            <p className="text-xs text-gray-400">
-              Type, subject, and description
-            </p>
-          </div>
-        </div>
-        <div className="border-t border-purple-100 mx-5 sm:mx-6" />
-        <div className="space-y-4 p-5 sm:p-6 pt-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">
-                Feedback Type
-              </label>
-              <select
-                value={form.feedbackType}
-                onChange={(e) => update('feedbackType', e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all bg-white">
-                
-                <option value="">Select feedback type</option>
-                {FEEDBACK_TYPES.map((t) =>
-                <option key={t} value={t}>
-                    {t}
-                  </option>
-                )}
-              </select>
-            </div>
-            <FormField
-              label="Subject"
-              type="text"
-              placeholder="Enter subject"
-              value={form.subject}
-              onChange={(v) => update('subject', v)} />
-            
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1.5">
-              Feedback Description
-            </label>
-            <textarea
-              rows={4}
-              placeholder="Provide detailed feedback..."
-              value={form.description}
-              onChange={(e) => update('description', e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all resize-none" />
-            
-          </div>
-          <div className="max-w-xs">
-            <label className="block text-xs font-medium text-gray-600 mb-1.5">
-              Rating
-            </label>
-            <select
-              value={form.rating}
-              onChange={(e) => update('rating', e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all bg-white">
-              
-              <option value="">Select rating</option>
-              {RATING_OPTIONS.map((r) =>
-              <option key={r.value} value={r.value}>
-                  {r.label}
-                </option>
-              )}
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* 4. Response & Action */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="flex items-center gap-3 px-5 sm:px-6 pt-5 sm:pt-6 pb-3">
-          <div className="w-9 h-9 rounded-lg bg-green-50 flex items-center justify-center">
-            <WrenchIcon size={18} className="text-green-600" />
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900">
-              Response & Action
-            </h3>
-            <p className="text-xs text-gray-400">Status and response details</p>
-          </div>
-        </div>
-        <div className="border-t border-green-100 mx-5 sm:mx-6" />
-        <div className="space-y-4 p-5 sm:p-6 pt-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">
-                Status
-              </label>
-              <select
-                value={form.status}
-                onChange={(e) => update('status', e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all bg-white">
-                
-                <option value="">Select status</option>
-                {STATUS_OPTIONS.map((o) =>
-                <option key={o} value={o}>
-                    {o}
-                  </option>
-                )}
-              </select>
-            </div>
-            <FormField
-              label="Responsible Person"
-              type="text"
-              placeholder="Enter name"
-              value={form.responsiblePerson}
-              onChange={(v) => update('responsiblePerson', v)} />
-            
-          </div>
-          {(form.status === 'Addressed' || form.status === 'Closed') &&
-          <div className="max-w-xs">
-              <FormField
-              label="Date Addressed"
-              type="date"
-              value={form.dateAddressed}
-              onChange={(v) => update('dateAddressed', v)} />
-            
-            </div>
-          }
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1.5">
-              Response Details
-            </label>
-            <textarea
-              rows={3}
-              placeholder="Describe the response or action taken..."
-              value={form.responseDetails}
-              onChange={(e) => update('responseDetails', e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all resize-none" />
-            
-          </div>
-        </div>
-      </div>
-
-      {/* 5. Attachments */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="flex items-center gap-3 px-5 sm:px-6 pt-5 sm:pt-6 pb-3">
-          <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center">
-            <PaperclipIcon size={18} className="text-gray-500" />
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900">Attachments</h3>
-            <p className="text-xs text-gray-400">
-              Supporting documents and notes
-            </p>
-          </div>
-        </div>
-        <div className="border-t border-gray-100 mx-5 sm:mx-6" />
-        <div className="space-y-4 p-5 sm:p-6 pt-4">
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1.5">
-              Document Link (Google Drive)
-            </label>
-            <div className="relative">
-              <LinkIcon
-                size={16}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              
-              <input
-                type="url"
-                placeholder="https://drive.google.com/file/d/..."
-                value={form.documentLink}
-                onChange={(e) => update('documentLink', e.target.value)}
-                className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all" />
-              
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1.5">
-              Remarks
-            </label>
-            <textarea
-              rows={3}
-              placeholder="Add any remarks or notes..."
-              value={form.remarks}
-              onChange={(e) => update('remarks', e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all resize-none" />
-            
-          </div>
-        </div>
-      </div>
-
-      <div className="flex justify-end">
-        <motion.button
-          whileHover={{
-            scale: 1.01
-          }}
-          whileTap={{
-            scale: 0.98
-          }}
-          onClick={handleSubmit}
-          className="px-8 py-2.5 bg-primary hover:bg-primary-600 text-white font-semibold rounded-xl text-sm transition-all shadow-lg shadow-primary/20">
-          
-          Submit Feedback
-        </motion.button>
-      </div>
-    </div>);
-
-}
-function FormField({
-  label,
-  type,
-  placeholder,
-  disabled,
-  className,
-  value,
-  onChange
-
-
-
-
-
-
-
-
-}: {label: string;type: string;placeholder?: string;disabled?: boolean;className?: string;value?: string;onChange?: (v: string) => void;}) {
-  return (
-    <div className={className}>
-      <label className="block text-xs font-medium text-gray-600 mb-1.5">
-        {label}
-      </label>
-      <input
-        type={type}
-        placeholder={placeholder}
-        disabled={disabled}
-        value={value || ''}
-        onChange={onChange ? (e) => onChange(e.target.value) : undefined}
-        className={`w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all ${disabled ? 'bg-gray-50 text-gray-400' : 'bg-white'}`} />
-      
-    </div>);
-
-}
-function PffList({
-  records,
-  searchQuery,
-  onSearch,
-  onDelete
-
-
-
-
-
-}: {records: PffRecord[];searchQuery: string;onSearch: (q: string) => void;onDelete: (id: number) => void;}) {
-  const [page, setPage] = useState(1);
-  const [viewRecord, setViewRecord] = useState<PffRecord | null>(null);
-  const perPage = 5;
-  const totalPages = Math.max(1, Math.ceil(records.length / perPage));
-  const paginated = records.slice((page - 1) * perPage, page * perPage);
-  function getViewSections(r: PffRecord): SectionDef[] {
-    const ratingLabel = r.rating ?
-    {
-      '1': 'Very Poor',
-      '2': 'Poor',
-      '3': 'Average',
-      '4': 'Good',
-      '5': 'Excellent'
-    }[r.rating] || r.rating :
-    '';
-    return [
-    {
-      title: 'Basic Information',
-      fields: [
-      {
-        label: 'PFF Reference No.',
-        value: r.refNo
-      },
-      {
-        label: 'Date of Feedback',
-        value: r.dateFeedback
-      },
-      {
-        label: 'Province',
-        value: r.province
-      },
-      {
-        label: 'Municipality / City',
-        value: r.municipality
-      },
-      {
-        label: 'Barangay',
-        value: r.barangay
-      }]
-
-    },
-    {
-      title: 'Respondent Information',
-      fields: [
-      {
-        label: 'Anonymous',
-        value: r.isAnonymous,
-        type: 'badge' as const,
-        badgeColor:
-        r.isAnonymous === 'Yes' ?
-        'bg-amber-50 text-amber-700' :
-        'bg-green-50 text-green-700'
-      },
-      ...(r.isAnonymous === 'No' ?
-      [
-      {
-        label: 'Name',
-        value: r.respondentName
-      },
-      {
-        label: 'Contact Number',
-        value: r.contactNumber
-      }] :
-
-      []),
-      {
-        label: 'Designation / Role',
-        value: r.designation
-      }]
-
-    },
-    {
-      title: 'Feedback Details',
-      fields: [
-      {
-        label: 'Feedback Type',
-        value: r.feedbackType,
-        type: 'badge' as const,
-        badgeColor:
-        r.feedbackType === 'Compliment' ?
-        'bg-green-50 text-green-700' :
-        r.feedbackType === 'Concern' ?
-        'bg-amber-50 text-amber-700' :
-        r.feedbackType === 'Inquiry' ?
-        'bg-purple-50 text-purple-700' :
-        'bg-blue-50 text-blue-700'
-      },
-      {
-        label: 'Subject',
-        value: r.subject
-      },
-      {
-        label: 'Description',
-        value: r.description
-      },
-      {
-        label: 'Rating',
-        value: r.rating ? `${r.rating}/5 - ${ratingLabel}` : '',
-        type: 'badge' as const,
-        badgeColor:
-        Number(r.rating) >= 4 ?
-        'bg-green-50 text-green-700' :
-        Number(r.rating) >= 3 ?
-        'bg-amber-50 text-amber-700' :
-        'bg-red-50 text-red-700'
-      }]
-
-    },
-    {
-      title: 'Response & Action',
-      fields: [
-      {
-        label: 'Status',
-        value: r.status,
-        type: 'badge' as const,
-        badgeColor:
-        r.status === 'Addressed' ?
-        'bg-green-50 text-green-700' :
-        r.status === 'Closed' ?
-        'bg-gray-100 text-gray-600' :
-        r.status === 'Under Review' ?
-        'bg-amber-50 text-amber-700' :
-        'bg-blue-50 text-blue-700'
-      },
-      {
-        label: 'Response Details',
-        value: r.responseDetails
-      },
-      {
-        label: 'Date Addressed',
-        value: r.dateAddressed
-      },
-      {
-        label: 'Responsible Person',
-        value: r.responsiblePerson
-      }]
-
-    },
-    {
-      title: 'Attachments',
-      fields: [
-      {
-        label: 'Document Link',
-        value: r.documentLink,
-        type: 'link' as const
-      },
-      {
-        label: 'Remarks',
-        value: r.remarks
-      }]
-
-    }];
-
-  }
-  return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-      <ViewModal
-        isOpen={!!viewRecord}
-        onClose={() => setViewRecord(null)}
-        title={viewRecord ? `Feedback ${viewRecord.refNo}` : 'Feedback Details'}
-        subtitle={
-        viewRecord ?
-        `${viewRecord.feedbackType} • ${viewRecord.dateFeedback}` :
-        ''
-        }
-        sections={viewRecord ? getViewSections(viewRecord) : []} />
-      
-      <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <SearchIcon
-            size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => {
-              onSearch(e.target.value);
-              setPage(1);
-            }}
-            placeholder="Search feedback..."
-            className="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all" />
-          
-        </div>
-      </div>
-
-      {/* Desktop Table */}
-      <div className="hidden md:block overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-100 bg-gradient-to-r from-primary-50/40 to-secondary-50/30">
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Ref No.
-              </th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Date
-              </th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Feedback Type
-              </th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Rating
-              </th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginated.map((r) =>
-            <tr
-              key={r.id}
-              className="border-b border-gray-50 hover:bg-gradient-to-r hover:from-primary-50/30 hover:to-transparent hover:shadow-sm transition-all duration-200 cursor-pointer group">
-              
-                <td className="px-4 py-3.5 font-mono text-xs text-gray-500 group-hover:text-gray-700 transition-colors relative">
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-0 group-hover:h-8 bg-primary rounded-r-full transition-all duration-200" />
-                  {r.refNo}
-                </td>
-                <td className="px-4 py-3.5 text-gray-700">{r.dateFeedback}</td>
-                <td className="px-4 py-3.5">
-                  <FeedbackTypeBadge value={r.feedbackType} />
-                </td>
-                <td className="px-4 py-3.5">
-                  {r.rating && <RatingBadge value={r.rating} />}
-                </td>
-                <td className="px-4 py-3.5">
-                  <StatusBadge value={r.status} />
-                </td>
-                <td className="px-4 py-3.5">
-                  <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
-                    <button
-                    onClick={() => setViewRecord(r)}
-                    className="p-1.5 rounded-lg hover:bg-secondary-100 text-secondary transition-all hover:scale-110"
-                    title="View">
-                    
-                      <EyeIcon size={15} />
-                    </button>
+                  <div className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 flex items-center justify-between font-mono">
+                    <span>{grievanceId}</span>
+                    <LockIcon className="w-3.5 h-3.5 text-gray-400" />
                   </div>
-                </td>
-              </tr>
-            )}
-            {paginated.length === 0 &&
-            <tr>
-                <td
-                colSpan={6}
-                className="text-center py-8 text-gray-400 text-sm">
-                
-                  No feedback records found
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+                </Field>
 
-      {/* Mobile Cards */}
-      <div className="md:hidden p-3 space-y-3">
-        {paginated.map((r) =>
-        <div
-          key={r.id}
-          className="border border-gray-100 rounded-xl p-4 space-y-2 hover:border-primary/30 hover:shadow-md hover:shadow-primary/5 transition-all duration-200 cursor-pointer group relative overflow-hidden">
-          
-            <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary/0 group-hover:bg-primary rounded-l-xl transition-all duration-200" />
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-xs text-gray-500">{r.refNo}</span>
-              <span className="text-xs text-gray-400">{r.dateFeedback}</span>
-            </div>
-            <p className="font-medium text-gray-900 text-sm group-hover:text-primary transition-colors">
-              {r.subject}
-            </p>
-            <div className="flex items-center gap-2 flex-wrap">
-              <FeedbackTypeBadge value={r.feedbackType} />
-              {r.rating && <RatingBadge value={r.rating} />}
-              <StatusBadge value={r.status} />
-            </div>
-            <div className="flex items-center justify-end pt-1">
-              <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
-                <button
-                onClick={() => setViewRecord(r)}
-                className="p-1.5 rounded-lg hover:bg-secondary-50 text-secondary transition-colors">
+                <Field
+                id="field-dateOfFiling"
+                label="Date of Filing"
+                required
+                error={errors.dateOfFiling}>
                 
-                  <EyeIcon size={14} />
-                </button>
+                  <input
+                  type="date"
+                  value={form.dateOfFiling}
+                  onChange={(e) => update('dateOfFiling', e.target.value)}
+                  className={`${INPUT_CLS} ${errors.dateOfFiling ? 'border-red-300' : 'border-gray-200'}`} />
+                
+                </Field>
+
+                {/* Anonymous */}
+                <div className="md:col-span-2">
+                  <label className="inline-flex items-center gap-2.5 cursor-pointer select-none">
+                    <input
+                    type="checkbox"
+                    checked={form.anonymous}
+                    onChange={(e) => update('anonymous', e.target.checked)}
+                    className="w-4 h-4 rounded border-gray-300 text-[#F68E22] focus:ring-orange-300" />
+                  
+                    <span className="text-sm font-medium text-gray-700">
+                      Submit anonymously
+                    </span>
+                  </label>
+                  <Helper text="If checked, your name and contact details will be hidden and not stored." />
+                </div>
+
+                <AnimatePresence initial={false}>
+                  {showPersonal &&
+                <motion.div
+                  initial={{
+                    height: 0,
+                    opacity: 0
+                  }}
+                  animate={{
+                    height: 'auto',
+                    opacity: 1
+                  }}
+                  exit={{
+                    height: 0,
+                    opacity: 0
+                  }}
+                  transition={{
+                    duration: 0.2
+                  }}
+                  className="overflow-hidden md:col-span-2">
+                  
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                        <Field label="First Name">
+                          <input
+                        type="text"
+                        value={form.firstName}
+                        onChange={(e) =>
+                        update('firstName', e.target.value)
+                        }
+                        placeholder="First name"
+                        className={`${INPUT_CLS} border-gray-200`} />
+                      
+                        </Field>
+                        <Field label="Middle Initial">
+                          <input
+                        type="text"
+                        value={form.middleInitial}
+                        onChange={(e) =>
+                        update('middleInitial', e.target.value)
+                        }
+                        placeholder="M.I."
+                        className={`${INPUT_CLS} border-gray-200`} />
+                      
+                        </Field>
+                        <Field label="Surname">
+                          <input
+                        type="text"
+                        value={form.surname}
+                        onChange={(e) => update('surname', e.target.value)}
+                        placeholder="Surname"
+                        className={`${INPUT_CLS} border-gray-200`} />
+                      
+                        </Field>
+                        <Field
+                      id="field-contactNumber"
+                      label="Contact Number"
+                      error={errors.contactNumber}>
+                      
+                          <input
+                        type="tel"
+                        value={form.contactNumber}
+                        onChange={(e) =>
+                        update('contactNumber', e.target.value)
+                        }
+                        placeholder="+63 9XX XXX XXXX"
+                        className={`${INPUT_CLS} ${errors.contactNumber ? 'border-red-300' : 'border-gray-200'}`} />
+                      
+                        </Field>
+                        <Field
+                      id="field-email"
+                      label="Email Address"
+                      error={errors.email}
+                      className="md:col-span-2">
+                      
+                          <input
+                        type="email"
+                        value={form.email}
+                        onChange={(e) => update('email', e.target.value)}
+                        placeholder="name@example.com"
+                        className={`${INPUT_CLS} ${errors.email ? 'border-red-300' : 'border-gray-200'}`} />
+                      
+                        </Field>
+                      </div>
+                    </motion.div>
+                }
+                </AnimatePresence>
+
+                <Field label="IP / Non-IP">
+                  <select
+                  value={form.ipStatus}
+                  onChange={(e) => update('ipStatus', e.target.value)}
+                  className={`${INPUT_CLS} border-gray-200`}>
+                  
+                    <option value="">Select</option>
+                    {IP_OPTIONS.map((o) =>
+                  <option key={o} value={o}>
+                        {o}
+                      </option>
+                  )}
+                  </select>
+                </Field>
+
+                <Field label="Gender">
+                  <select
+                  value={form.gender}
+                  onChange={(e) => update('gender', e.target.value)}
+                  className={`${INPUT_CLS} border-gray-200`}>
+                  
+                    <option value="">Select</option>
+                    {GENDER_OPTIONS.map((o) =>
+                  <option key={o} value={o}>
+                        {o}
+                      </option>
+                  )}
+                  </select>
+                </Field>
+
+                <Field
+                label="Designation of Complainant / Sender"
+                className="md:col-span-2">
+                
+                  <select
+                  value={form.designation}
+                  onChange={(e) => update('designation', e.target.value)}
+                  className={`${INPUT_CLS} border-gray-200`}>
+                  
+                    <option value="">Select designation</option>
+                    {DESIGNATION_OPTIONS.map((o) =>
+                  <option key={o} value={o}>
+                        {o}
+                      </option>
+                  )}
+                  </select>
+                </Field>
+
+                <Field
+                label="Address (Barangay, Municipality, Province)"
+                className="md:col-span-2">
+                
+                  <input
+                  type="text"
+                  value={form.address}
+                  onChange={(e) => update('address', e.target.value)}
+                  placeholder="Brgy., Municipality, Province"
+                  className={`${INPUT_CLS} border-gray-200`} />
+                
+                </Field>
+              </div>
+            </SectionCard>
+
+            {/* Section II */}
+            <SectionCard
+            title="II. Feedback Details"
+            subtitle="For comments, feedback, incidents, complaints, and recommendations to the Philippine Multisectoral Nutrition Project."
+            icon={<MessageSquareIcon className="w-5 h-5 text-orange-600" />}
+            iconBg="bg-orange-100"
+            headerBg="bg-orange-50/60">
+            
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                <Field
+                id="field-feedbackType"
+                label="Feedback Type"
+                required
+                error={errors.feedbackType}
+                className="md:col-span-2">
+                
+                  <select
+                  value={form.feedbackType}
+                  onChange={(e) => update('feedbackType', e.target.value)}
+                  className={`${INPUT_CLS} ${errors.feedbackType ? 'border-red-300' : 'border-gray-200'}`}>
+                  
+                    <option value="">Select feedback type</option>
+                    {FEEDBACK_TYPES.map((o) =>
+                  <option key={o} value={o}>
+                        {o}
+                      </option>
+                  )}
+                  </select>
+                </Field>
+
+                <Field label="Date of Incident" helper="If relevant.">
+                  <input
+                  type="date"
+                  value={form.dateOfIncident}
+                  onChange={(e) => update('dateOfIncident', e.target.value)}
+                  className={`${INPUT_CLS} border-gray-200`} />
+                
+                </Field>
+
+                <Field label="Time of Incident" helper="If relevant.">
+                  <input
+                  type="time"
+                  value={form.timeOfIncident}
+                  onChange={(e) => update('timeOfIncident', e.target.value)}
+                  className={`${INPUT_CLS} border-gray-200`} />
+                
+                </Field>
+
+                <Field
+                label="Location of Incident"
+                helper="If relevant, e.g. House #, Street, Barangay, Municipality, Region."
+                className="md:col-span-2">
+                
+                  <input
+                  type="text"
+                  value={form.locationOfIncident}
+                  onChange={(e) =>
+                  update('locationOfIncident', e.target.value)
+                  }
+                  placeholder="Location of incident"
+                  className={`${INPUT_CLS} border-gray-200`} />
+                
+                </Field>
+
+                <Field
+                id="field-specificDetails"
+                label="Specific Details of the Concern / Issue / Report"
+                required
+                error={errors.specificDetails}
+                className="md:col-span-2">
+                
+                  <textarea
+                  rows={5}
+                  value={form.specificDetails}
+                  onChange={(e) => update('specificDetails', e.target.value)}
+                  placeholder="Provide a detailed description of your concern, issue, or report."
+                  className={`${INPUT_CLS} resize-none ${errors.specificDetails ? 'border-red-300' : 'border-gray-200'}`} />
+                
+                </Field>
+
+                {/* Outcome expected */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Is there an outcome you would like in the resolution of the
+                    concern(s) that you have filed?
+                  </label>
+                  <div className="flex gap-3">
+                    {[
+                  {
+                    label: 'Yes',
+                    val: true
+                  },
+                  {
+                    label: 'No',
+                    val: false
+                  }].
+                  map((o) =>
+                  <button
+                    key={o.label}
+                    type="button"
+                    onClick={() => update('outcomeExpected', o.val)}
+                    className={`px-5 py-2 rounded-xl text-sm font-medium border transition-colors ${form.outcomeExpected === o.val ? 'bg-[#F68E22] text-white border-[#F68E22]' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}>
+                    
+                        {o.label}
+                      </button>
+                  )}
+                  </div>
+                </div>
+
+                <AnimatePresence initial={false}>
+                  {form.outcomeExpected &&
+                <motion.div
+                  initial={{
+                    height: 0,
+                    opacity: 0
+                  }}
+                  animate={{
+                    height: 'auto',
+                    opacity: 1
+                  }}
+                  exit={{
+                    height: 0,
+                    opacity: 0
+                  }}
+                  transition={{
+                    duration: 0.2
+                  }}
+                  className="overflow-hidden md:col-span-2">
+                  
+                      <Field label="If yes, please provide details">
+                        <textarea
+                      rows={3}
+                      value={form.outcomeExpectedDetails}
+                      onChange={(e) =>
+                      update('outcomeExpectedDetails', e.target.value)
+                      }
+                      placeholder="Describe the outcome you expect."
+                      className={`${INPUT_CLS} resize-none border-gray-200`} />
+                    
+                      </Field>
+                    </motion.div>
+                }
+                </AnimatePresence>
+
+                <Field
+                label="Recommendation / Compliment / Positive Feedback — please provide details"
+                className="md:col-span-2">
+                
+                  <textarea
+                  rows={3}
+                  value={form.recommendationDetails}
+                  onChange={(e) =>
+                  update('recommendationDetails', e.target.value)
+                  }
+                  placeholder="Share any recommendation, compliment, or positive feedback."
+                  className={`${INPUT_CLS} resize-none border-gray-200`} />
+                
+                </Field>
+              </div>
+            </SectionCard>
+
+            {/* Footer actions */}
+            <div className="flex items-center justify-between pt-2">
+              <button
+              type="button"
+              onClick={handleReset}
+              className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 font-medium">
+              
+                <RotateCcwIcon className="w-4 h-4 mr-1.5" />
+                Clear Form
+              </button>
+              <button
+              type="button"
+              onClick={handleSubmit}
+              className="inline-flex items-center px-5 py-2.5 rounded-xl bg-[#F68E22] hover:bg-[#e07d10] text-white text-sm font-medium transition-colors shadow-sm">
+              
+                <SendIcon className="w-4 h-4 mr-2" /> Submit Feedback
+              </button>
+            </div>
+          </div>
+        }
+
+        {/* List tab */}
+        {activeTab === 'list' &&
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Feedback Records
+              </h3>
+              <div className="relative w-full sm:w-72">
+                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search records..."
+                className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
+              
               </div>
             </div>
-          </div>
-        )}
-        {paginated.length === 0 &&
-        <div className="text-center py-8 text-gray-400 text-sm">
-            No feedback records found
+
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-100">
+                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Grievance ID
+                    </th>
+                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Date Filed
+                    </th>
+                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Sender
+                    </th>
+                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Type
+                    </th>
+                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-right">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {pageRecords.map((r) =>
+                <tr
+                  key={r.id}
+                  className="hover:bg-gray-50/60 transition-colors">
+                  
+                      <td className="px-6 py-4 text-sm font-mono text-gray-900">
+                        {r.grievanceId}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        {r.dateOfFiling}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        {r.anonymous ?
+                    <span className="italic text-gray-400">
+                            Anonymous
+                          </span> :
+
+                    [r.firstName, r.surname].filter(Boolean).join(' ') ||
+                    '—'
+                    }
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        {r.feedbackType}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button
+                      type="button"
+                      onClick={() => setViewing(r)}
+                      className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+                      aria-label="View record">
+                      
+                          <EyeIcon className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                )}
+                  {pageRecords.length === 0 &&
+                <tr>
+                      <td
+                    colSpan={5}
+                    className="px-6 py-10 text-center text-sm text-gray-500">
+                    
+                        No records found.
+                      </td>
+                    </tr>
+                }
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile cards */}
+            <div className="md:hidden divide-y divide-gray-100">
+              {pageRecords.map((r) =>
+            <div key={r.id} className="p-4 space-y-2">
+                  <div className="flex items-start justify-between">
+                    <p className="text-sm font-mono font-medium text-gray-900">
+                      {r.grievanceId}
+                    </p>
+                    <span className="text-xs text-gray-500">
+                      {r.dateOfFiling}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600">{r.feedbackType}</p>
+                  <p className="text-xs text-gray-500">
+                    {r.anonymous ?
+                'Anonymous' :
+                [r.firstName, r.surname].filter(Boolean).join(' ') ||
+                '—'}
+                  </p>
+                  <div className="flex justify-end pt-1">
+                    <button
+                  type="button"
+                  onClick={() => setViewing(r)}
+                  className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900">
+                  
+                      <EyeIcon className="w-4 h-4 mr-1.5" /> View
+                    </button>
+                  </div>
+                </div>
+            )}
+              {pageRecords.length === 0 &&
+            <div className="p-8 text-center text-sm text-gray-500">
+                  No records found.
+                </div>
+            }
+            </div>
+
+            {/* Pagination */}
+            {filtered.length > PAGE_SIZE &&
+          <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
+                <p className="text-xs text-gray-500">
+                  Page {pageSafe} of {totalPages} · {filtered.length} record
+                  {filtered.length !== 1 ? 's' : ''}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={pageSafe <= 1}
+                className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                aria-label="Previous page">
+                
+                    <ChevronLeftIcon className="w-4 h-4" />
+                  </button>
+                  <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={pageSafe >= totalPages}
+                className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                aria-label="Next page">
+                
+                    <ChevronRightIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+          }
           </div>
         }
       </div>
 
-      {/* Pagination */}
-      <div className="p-4 border-t border-gray-100 flex items-center justify-between">
-        <p className="text-xs text-gray-500">
-          Showing {paginated.length} of {records.length} records
-        </p>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-            className="p-1.5 rounded-lg border border-gray-200 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-40">
-            
-            <ChevronLeftIcon size={16} />
-          </button>
-          {Array.from(
-            {
-              length: totalPages
-            },
-            (_, i) => i + 1
-          ).map((p) =>
-          <button
-            key={p}
-            onClick={() => setPage(p)}
-            className={`w-8 h-8 rounded-lg text-xs font-medium transition-all ${p === page ? 'bg-primary text-white' : 'text-gray-500 hover:bg-gray-100'}`}>
-            
-              {p}
-            </button>
-          )}
-          <button
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
-            className="p-1.5 rounded-lg border border-gray-200 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-40">
-            
-            <ChevronRightIcon size={16} />
-          </button>
-        </div>
-      </div>
+      <ViewModal
+        isOpen={!!viewing}
+        onClose={() => setViewing(null)}
+        title="PMNP Feedback Record"
+        subtitle={viewing ? viewing.grievanceId : ''}
+        sections={viewSections} />
+      
     </div>);
 
 }
