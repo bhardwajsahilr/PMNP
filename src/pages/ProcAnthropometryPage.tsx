@@ -563,10 +563,11 @@ function AnthroForm({
             </label>
             <select
               value={form.unitOfMeasure}
-              onChange={(e) => updateField('unitOfMeasure', e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all bg-white">
+              disabled
+              aria-readonly="true"
+              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm bg-gray-50 text-gray-700 cursor-not-allowed appearance-none">
               
-              <option value="">Select unit</option>
+              <option value="">Select an item first</option>
               {UNIT_OPTIONS.map((o) =>
               <option key={o} value={o}>
                   {o}
@@ -574,7 +575,7 @@ function AnthroForm({
               )}
             </select>
             <p className="text-xs text-gray-400 mt-1">
-              Auto-selected based on item description
+              Auto-selected based on item description — cannot be edited
             </p>
           </div>
         </div>
