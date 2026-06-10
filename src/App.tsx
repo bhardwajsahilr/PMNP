@@ -21,6 +21,7 @@ import { PbgExternalVerificationPage } from './pages/PbgExternalVerificationPage
 import { CapacityNphcTargetsPage } from './pages/CapacityNphcTargetsPage';
 import { FinanceLguWfpPage } from './pages/FinanceLguWfpPage';
 import { MeRfTargetsPage } from './pages/MeRfTargetsPage';
+import { CapacityTrainingRegistrationPage } from './pages/CapacityTrainingRegistrationPage';
 export function App() {
   return (
     <AppProvider>
@@ -140,12 +141,7 @@ export function App() {
             
             <Route
               path="capacity-building/training-registration"
-              element={
-              <PlaceholderPage
-                title="Training Registration"
-                subtitle="Manage training registration records" />
-
-              } />
+              element={<CapacityTrainingRegistrationPage />} />
             
             <Route
               path="capacity-building/participant-registration"
