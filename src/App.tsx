@@ -93,6 +93,15 @@ export function App() {
               } />
             
             <Route path="lnap/lnc-status" element={<LncStatusPage />} />
+            <Route
+              path="lnap/doc-repo"
+              element={
+              <PlaceholderPage
+                title="Document Repository"
+                subtitle="LNAP document repository" />
+
+              } />
+            
 
             {/* ESMF */}
             <Route
@@ -125,6 +134,15 @@ export function App() {
               <PlaceholderPage
                 title="Approved CPs and CNOs"
                 subtitle="Approved Compliance Plans and Certificates of Non-Objection" />
+
+              } />
+            
+            <Route
+              path="esmf/doc-repo"
+              element={
+              <PlaceholderPage
+                title="Document Repository"
+                subtitle="ESMF document repository" />
 
               } />
             

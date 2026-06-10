@@ -141,6 +141,11 @@ const EXPANDABLE_MODULES: ExpandableModule[] = [
     label: 'Approved CPs and CNOs',
     path: '/dashboard/esmf/approved-cps-cnos',
     icon: AwardIcon
+  },
+  {
+    label: 'Document Repository',
+    path: '/dashboard/esmf/doc-repo',
+    icon: FolderIcon
   }]
 
 },
@@ -222,6 +227,11 @@ const EXPANDABLE_MODULES: ExpandableModule[] = [
     label: 'MNC Status',
     path: '/dashboard/lnap/mnc-status',
     icon: UsersIcon
+  },
+  {
+    label: 'Document Repository',
+    path: '/dashboard/lnap/doc-repo',
+    icon: FolderIcon
   }]
 
 },
