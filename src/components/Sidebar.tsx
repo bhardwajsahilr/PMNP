@@ -85,6 +85,11 @@ const EXPANDABLE_MODULES: ExpandableModule[] = [
   basePath: '/dashboard/capacity-building',
   subItems: [
   {
+    label: 'NPHC Targets',
+    path: '/dashboard/capacity-building/nphc-targets',
+    icon: TargetIcon
+  },
+  {
     label: 'Training Registration',
     path: '/dashboard/capacity-building/training-registration',
     icon: BookOpenIcon
@@ -93,11 +98,6 @@ const EXPANDABLE_MODULES: ExpandableModule[] = [
     label: 'Participant Registration',
     path: '/dashboard/capacity-building/participant-registration',
     icon: UserPlusIcon
-  },
-  {
-    label: 'NPHC Targets',
-    path: '/dashboard/capacity-building/nphc-targets',
-    icon: TargetIcon
   },
   {
     label: 'Capacity Mapping',
@@ -232,6 +232,11 @@ const EXPANDABLE_MODULES: ExpandableModule[] = [
   basePath: '/dashboard/me',
   subItems: [
   {
+    label: 'M&E Results Framework - Targets',
+    path: '/dashboard/me/rf-targets',
+    icon: TargetIcon
+  },
+  {
     label: 'Municipality / Barangay Profile',
     path: '/dashboard/me/municipality-profile',
     icon: MapPinIcon
@@ -240,11 +245,6 @@ const EXPANDABLE_MODULES: ExpandableModule[] = [
     label: 'HF Checklist',
     path: '/dashboard/me/hf-checklist',
     icon: CheckSquareIcon
-  },
-  {
-    label: 'Result Framework - Targets',
-    path: '/dashboard/me/rf-targets',
-    icon: TargetIcon
   },
   {
     label: 'Result Framework - Baseline',
@@ -269,6 +269,11 @@ const EXPANDABLE_MODULES: ExpandableModule[] = [
   icon: AwardIcon,
   basePath: '/dashboard/pbg',
   subItems: [
+  {
+    label: 'External Verification Report',
+    path: '/dashboard/pbg/external-verification-report',
+    icon: FileCheckIcon
+  },
   {
     label: 'Internal Verification Summary',
     path: '/dashboard/pbg/internal-verification-summary',
@@ -298,11 +303,6 @@ const EXPANDABLE_MODULES: ExpandableModule[] = [
     label: 'External Verification Checklist',
     path: '/dashboard/pbg/external-verification-checklist',
     icon: ListChecksIcon
-  },
-  {
-    label: 'External Verification Report',
-    path: '/dashboard/pbg/external-verification-report',
-    icon: FileCheckIcon
   },
   {
     label: 'Document Repository',

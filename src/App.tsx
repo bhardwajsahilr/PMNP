@@ -133,7 +133,7 @@ export function App() {
               path="capacity-building"
               element={
               <Navigate
-                to="/dashboard/capacity-building/training-registration"
+                to="/dashboard/capacity-building/nphc-targets"
                 replace />
 
               } />
@@ -261,9 +261,7 @@ export function App() {
             {/* M&E */}
             <Route
               path="me"
-              element={
-              <Navigate to="/dashboard/me/municipality-profile" replace />
-              } />
+              element={<Navigate to="/dashboard/me/rf-targets" replace />} />
             
             <Route
               path="me/municipality-profile"
@@ -317,7 +315,7 @@ export function App() {
               path="pbg"
               element={
               <Navigate
-                to="/dashboard/pbg/internal-verification-summary"
+                to="/dashboard/pbg/external-verification-report"
                 replace />
 
               } />
